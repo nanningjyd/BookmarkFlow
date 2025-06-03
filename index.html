@@ -461,7 +461,7 @@
 <body>
   <div class="main-layout">
     <nav class="sidebar">
-      <h2>分组/文件夹</h2>
+      <h2 id="folderTitle" title="点击可一键展开/收起全部分组">分组/文件夹</h2>
       <button class="add-folder-btn" id="addFolderBtn">+ 新建分组</button>
       <ul class="folder-list" id="folderList"></ul>
       <label class="add-folder-btn" for="importBookmarks" style="background:#fff;color:var(--primary);border:1px solid var(--primary);margin-top:0.5em;">导入收藏夹
@@ -1057,6 +1057,77 @@
       renderSidebar();
       renderContent();
     }
+
+    // ===== 一键展开/收起所有分组和子分组 =====
+    document.getElementById('folderTitle').onclick = function() {
+      // 判断当前是否有收起的，有则全部展开，否则全部收起
+      const allFolders = [];
+      function collectFolders(folders, path = []) {
+        folders.forEach(folder => {
+          if (folder.children) {
+            const fullPath = [...path, folder.title];
+            allFolders.push(fullPath.join('/'));
+            collectFolders(folder.children.filter(f => f.children), fullPath);
+          }
+        });
+      }
+      collectFolders(bookmarks);
+      // 判断是否有收起的
+      let hasCollapsed = false;
+      for (const key of allFolders) {
+        if (window.folderCollapseState[key]) {
+          hasCollapsed = true;
+          break;
+        }
+      }
+      // 统一设置
+      for (const key of allFolders) {
+        window.folderCollapseState[key] = !hasCollapsed;
+      }
+      // 子分组同理（全局）
+      const allSubfolders = [];
+      function collectSubfolders(folders, path = []) {
+        folders.forEach(folder => {
+          if (folder.children) {
+            const fullPath = [...path, folder.title];
+            collectSubfolders(folder.children.filter(f => f.children), fullPath);
+          }
+          if (folder.children) {
+            folder.children.filter(f => f.children).forEach(sub => {
+              const subPath = [...path, folder.title, sub.title];
+              allSubfolders.push(subPath.join('/'));
+              collectSubfolders(sub.children.filter(f => f.children), subPath);
+            });
+          }
+        });
+      }
+      collectSubfolders(bookmarks);
+      for (const key of allSubfolders) {
+        window.subfolderCollapseState = window.subfolderCollapseState || {};
+        window.subfolderCollapseState[key] = !hasCollapsed;
+      }
+      // ===== 新增：右侧内容区的所有子分组折叠状态同步 =====
+      if (selectedFolderPath && selectedFolderPath.length > 0) {
+        const folder = getFolderByPath(selectedFolderPath);
+        if (folder && folder.children) {
+          const rightSubfolders = [];
+          function collectRightSubfolders(subs, path = []) {
+            subs.forEach(sub => {
+              if (sub.children) {
+                const fullPath = [...path, sub.title];
+                rightSubfolders.push(fullPath.join('/'));
+                collectRightSubfolders(sub.children.filter(f => f.children), fullPath);
+              }
+            });
+          }
+          collectRightSubfolders(folder.children.filter(f => f.children), selectedFolderPath);
+          for (const key of rightSubfolders) {
+            window.subfolderCollapseState[key] = !hasCollapsed;
+          }
+        }
+      }
+      renderAll();
+    };
 
     // ===== 新建分组/网址 =====
     document.getElementById('addFolderBtn').onclick = function() {
