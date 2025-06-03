@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的网址导航</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+      background: var(--bg, #f7f9fa);
+      margin: 0;
+      padding: 0;
+      color: var(--text, #222);
+      height: 100vh;
+      overflow: hidden;
+      transition: background 0.2s, color 0.2s;
+    }
+    :root {
+      --bg: #f7f9fa;
+      --text: #222;
+      --primary: #2d8cf0;
+      --sidebar-bg: #fff;
+      --sidebar-border: #e0e6ed;
+      --card-bg: #fff;
+      --card-shadow: rgba(0,0,0,0.03);
+    }
+    body.theme-dark {
+      --bg: #181c27;
+      --text: #e0e6ed;
+      --primary: #2d8cf0;
+      --sidebar-bg: #232a3b;
+      --sidebar-border: #232a3b;
+      --card-bg: #232a3b;
+      --card-shadow: rgba(0,0,0,0.18);
+    }
+    body.theme-blue {
+      --bg: #eaf3ff;
+      --text: #1a2b4c;
+      --primary: #1769aa;
+      --sidebar-bg: #f7fbff;
+      --sidebar-border: #b3d8fd;
+      --card-bg: #fff;
+      --card-shadow: rgba(23,105,170,0.06);
+    }
+    body.theme-green {
+      --bg: #eafaf1;
+      --text: #1a4c2b;
+      --primary: #1abc9c;
+      --sidebar-bg: #f7fffb;
+      --sidebar-border: #b3fdd8;
+      --card-bg: #fff;
+      --card-shadow: rgba(26,188,156,0.06);
+    }
+    .main-layout {
+      display: flex;
+      height: 100vh;
+      position: relative;
+    }
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      box-shadow: 2px 0 8px var(--card-shadow);
+      padding: 1.5rem 0.5rem 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      min-width: 120px;
+      max-width: 60vw;
+    }
+    .resizer {
+      width: 6px;
+      background: #e0e6ed;
+      cursor: ew-resize;
+      position: relative;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+    .resizer:hover, .resizer.active {
+      background: #2d8cf0;
+    }
+    .sidebar h2 {
+      font-size: 1.1rem;
+      color: var(--primary);
+      margin: 0 0 1rem 0;
+      letter-spacing: 1px;
+    }
+    .folder-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex: 1;
+    }
+    .folder-list li {
+      padding: 0.5em 0.8em;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.2s;
+      user-select: none;
+      position: relative;
+      gap: 0.3em;
+      margin-bottom: 0.3em;
+    }
+    .folder-list li.selected {
+      background: #eaf3ff;
+      color: var(--primary);
+      font-weight: bold;
+    }
+    .folder-actions {
+      display: flex;
+      gap: 0.3em;
+    }
+    .add-folder-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4em 1em;
+      font-size: 1em;
+      cursor: pointer;
+      margin-top: 0.5em;
+      transition: background 0.2s;
+      margin-bottom: 0.5em;
+    }
+    .add-folder-btn:hover {
+      background: #1769aa;
+    }
+    .add-subfolder-btn {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      padding: 0.2em 0.7em;
+      font-size: 0.95em;
+      cursor: pointer;
+      margin-left: 0.5em;
+      margin-top: 0.2em;
+      margin-bottom: 0.2em;
+      transition: background 0.2s, color 0.2s;
+    }
+    .add-subfolder-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .theme-btn {
+      position: absolute;
+      right: 2.5rem;
+      top: 1.5rem;
+      z-index: 10;
+      background: var(--sidebar-bg);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      padding: 0.3em 1em;
+      font-size: 1em;
+      cursor: pointer;
+      margin-left: 1em;
+      transition: background 0.2s, color 0.2s;
+    }
+    .theme-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .settings-btn {
+      position: absolute;
+      right: 2.5rem;
+      top: 4.2rem;
+      z-index: 10;
+      background: var(--sidebar-bg);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      padding: 0.3em 1em;
+      font-size: 1em;
+      cursor: pointer;
+      margin-left: 1em;
+      transition: background 0.2s, color 0.2s;
+    }
+    .settings-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .export-btn {
+      position: absolute;
+      right: 2.5rem;
+      top: 6.9rem;
+      z-index: 10;
+      background: var(--sidebar-bg);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      padding: 0.3em 1em;
+      font-size: 1em;
+      cursor: pointer;
+      margin-left: 1em;
+      transition: background 0.2s, color 0.2s;
+    }
+    .export-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .content {
+      flex: 1;
+      padding: 4.2em 2.5rem 2rem 2.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+    .content-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5em;
+      margin-bottom: 1.5em;
+    }
+    .content-header h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      color: var(--primary);
+      letter-spacing: 1px;
+    }
+    .add-link-btn {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      padding: 0.4em 1em;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .add-link-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .links-list, .subfolders-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 2em 0;
+    }
+    .links-list li, .subfolders-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-bottom: 0.3em;
+      background: var(--card-bg);
+      border-radius: 6px;
+      padding: 0.5em 1em;
+      box-shadow: 0 1px 4px var(--card-shadow);
+    }
+    .links-list li:last-child, .subfolders-list li:last-child {
+      margin-bottom: 0;
+    }
+    .edit-input {
+      font-size: 1em;
+      padding: 0.2em 0.5em;
+      border: 1px solid #d0d7de;
+      border-radius: 4px;
+      outline: none;
+      margin-right: 0.5em;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.1em;
+      cursor: pointer;
+      margin-left: 0.2em;
+      transition: color 0.2s;
+    }
+    .action-btn:hover {
+      color: var(--primary);
+    }
+    .folder-toggle {
+      font-size: 1.1em;
+      color: #888;
+      margin-right: 0.5em;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s;
+      background: none;
+      border: none;
+      outline: none;
+      padding: 0;
+    }
+    .folder-list .collapsed > .folder-toggle {
+      transform: rotate(-90deg);
+    }
+    .folder-list .children {
+      margin-left: 1.2em;
+      padding-left: 0.5em;
+      border-left: 2px dashed #e0e6ed;
+    }
+    .folder-list .children.collapsed {
+      display: none;
+    }
+    .favicon {
+      width: var(--favicon-size, 20px);
+      height: var(--favicon-size, 20px);
+      margin-right: 0.5em;
+      border-radius: 3px;
+      background: #eee;
+      object-fit: contain;
+      vertical-align: middle;
+      transition: width 0.2s, height 0.2s;
+    }
+    .subfolders-list li {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
+    }
+    .subfolder-toggle {
+      font-size: 1.1em;
+      color: #888;
+      margin-right: 0.5em;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s;
+      background: none;
+      border: none;
+      outline: none;
+      padding: 0;
+    }
+    .subfolders-list .collapsed > .subfolder-toggle {
+      transform: rotate(-90deg);
+    }
+    .subfolders-list .children {
+      margin-left: 1.2em;
+      padding-left: 0.5em;
+      border-left: 2px dashed #e0e6ed;
+    }
+    .subfolders-list .children.collapsed {
+      display: none;
+    }
+    .folder-edit-btn {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.1em;
+      cursor: pointer;
+      margin-left: 0.2em;
+      transition: color 0.2s;
+    }
+    .folder-edit-btn:hover {
+      color: var(--primary);
+    }
+    .subfolder-edit-btn {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.1em;
+      cursor: pointer;
+      margin-left: 0.2em;
+      transition: color 0.2s;
+    }
+    .subfolder-edit-btn:hover {
+      color: var(--primary);
+    }
+    .topbar {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.7em 1em;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--bg);
+      padding: 0.7em 0 0.7em 0;
+      margin-bottom: 1em;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .topbar > * {
+      flex: 0 0 auto;
+      margin-bottom: 0;
+    }
+    .topbar button {
+      background: var(--sidebar-bg);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      padding: 0.3em 1em;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      min-width: 2.5em;
+      min-height: 2.2em;
+      line-height: 1.5em;
+      box-sizing: border-box;
+    }
+    .topbar button:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .topbar .icon-btn {
+      padding: 0.3em 0.7em;
+      font-size: 1.2em;
+      min-width: 2.2em;
+      min-height: 2.2em;
+    }
+    .topbar .label {
+      color: var(--text);
+      font-size: 1em;
+      margin: 0 0.2em;
+      user-select: none;
+      min-height: 2.2em;
+      display: flex;
+      align-items: center;
+    }
+    .links-list li, .subfolders-list li, .folder-list li, .content-header h1, .topbar, .topbar button, .topbar .label {
+      font-size: var(--font-size, 1em);
+      transition: font-size 0.2s;
+    }
+    .display-menu {
+      display: none;
+      position: absolute;
+      right: 1.5em;
+      top: 3.2em;
+      background: var(--sidebar-bg, #fff);
+      border: 1px solid var(--primary, #2d8cf0);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 0.7em 1.2em;
+      z-index: 100;
+      min-width: 180px;
+    }
+    .display-menu.active {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.7em;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .main-layout {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e6ed;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: visible;
+        padding: 1rem 0.5rem 1rem 1rem;
+      }
+      .content {
+        padding: 1rem 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-layout">
+    <nav class="sidebar">
+      <h2>分组/文件夹</h2>
+      <button class="add-folder-btn" id="addFolderBtn">+ 新建分组</button>
+      <ul class="folder-list" id="folderList"></ul>
+      <label class="add-folder-btn" for="importBookmarks" style="background:#fff;color:var(--primary);border:1px solid var(--primary);margin-top:0.5em;">导入收藏夹
+        <input type="file" id="importBookmarks" accept=".html" style="display:none">
+      </label>
+    </nav>
+    <div class="resizer" id="resizer"></div>
+    <main class="content">
+      <div class="topbar">
+        <button class="theme-btn" id="themeBtn">主题</button>
+        <button class="settings-btn" id="settingsBtn">设置</button>
+        <button class="export-btn" id="exportBtn">导出书签</button>
+        <button class="settings-btn" id="clearAllBtn">清空所有</button>
+        <span class="label">字号</span>
+        <button class="icon-btn" id="fontIncBtn">A+</button>
+        <button class="icon-btn" id="fontDecBtn">A-</button>
+        <span class="label">图标</span>
+        <button class="icon-btn" id="iconIncBtn">🔍+</button>
+        <button class="icon-btn" id="iconDecBtn">🔍-</button>
+      </div>
+      <div class="content-header">
+        <h1 id="currentFolderTitle">请选择分组</h1>
+        <button class="add-link-btn" id="addLinkBtn" style="display:none;">+ 添加网址</button>
+      </div>
+      <ul class="subfolders-list" id="subfoldersList"></ul>
+      <ul class="links-list" id="linksList"></ul>
+    </main>
+  </div>
+  <script>
+    // ===== 主题切换 =====
+    const themes = [
+      {name: '亮色', value: ''},
+      {name: '暗色', value: 'theme-dark'},
+      {name: '蓝色', value: 'theme-blue'},
+      {name: '绿色', value: 'theme-green'}
+    ];
+    function setTheme(theme) {
+      document.body.className = theme;
+      localStorage.setItem('myTheme', theme);
+    }
+    function getTheme() {
+      return localStorage.getItem('myTheme') || '';
+    }
+    document.getElementById('themeBtn').onclick = function() {
+      let current = getTheme();
+      let idx = themes.findIndex(t => t.value === current);
+      idx = (idx + 1) % themes.length;
+      setTheme(themes[idx].value);
+      this.textContent = '主题: ' + themes[idx].name;
+    };
+    // 初始化主题
+    setTheme(getTheme());
+    document.getElementById('themeBtn').textContent = '主题' + (themes.find(t => t.value === getTheme())?.name ? (': ' + themes.find(t => t.value === getTheme()).name) : '');
+
+    // ===== 管理员密码 =====
+    function getPassword() {
+      return localStorage.getItem('myPwd') || 'admin123';
+    }
+    function setPassword(pwd) {
+      localStorage.setItem('myPwd', pwd);
+    }
+    let isAdmin = false;
+    // 每次页面加载都需要重新输入密码
+    window.addEventListener('beforeunload', function() { isAdmin = false; });
+    // 页面初始化时，isAdmin为false
+    isAdmin = false;
+    function requireAdmin(cb) {
+      if (isAdmin) return cb();
+      let pwd = prompt('请输入管理员密码:');
+      if (pwd === getPassword()) {
+        isAdmin = true;
+        cb();
+      } else if (pwd !== null) {
+        alert('密码错误！');
+      }
+    }
+    document.getElementById('settingsBtn').onclick = function() {
+      let oldPwd = prompt('请输入当前管理员密码:');
+      if (oldPwd === getPassword()) {
+        let newPwd = prompt('请输入新密码:');
+        if (newPwd && newPwd.trim()) {
+          setPassword(newPwd.trim());
+          alert('密码已修改');
+        }
+      } else if (oldPwd !== null) {
+        alert('密码错误！');
+      }
+    };
+
+    // ===== 数据结构与本地存储 =====
+    let bookmarks = [];
+    let selectedFolderPath = [];
+
+    function saveToLocal() {
+      localStorage.setItem('myBookmarks', JSON.stringify(bookmarks));
+    }
+    function loadFromLocal() {
+      const data = localStorage.getItem('myBookmarks');
+      return data ? JSON.parse(data) : null;
+    }
+
+    // ===== 书签操作工具 =====
+    function getFolderByPath(path, arr = bookmarks) {
+      if (!path.length) return null;
+      let node = null, children = arr;
+      for (let i = 0; i < path.length; i++) {
+        node = children.find(f => f.title === path[i] && f.children);
+        if (!node) return null;
+        children = node.children;
+      }
+      return node;
+    }
+    function getParentFolderByPath(path) {
+      if (path.length <= 1) return bookmarks;
+      let parent = bookmarks;
+      for (let i = 0; i < path.length - 1; i++) {
+        const node = parent.find(f => f.title === path[i] && f.children);
+        if (!node) return bookmarks;
+        parent = node.children;
+      }
+      return parent;
+    }
+
+    // ===== 渲染侧边栏分组 =====
+    function renderSidebar() {
+      const folderList = document.getElementById('folderList');
+      folderList.innerHTML = '';
+      // 用于记录折叠状态
+      if (!window.folderCollapseState) window.folderCollapseState = {};
+      function renderFolders(folders, path = [], parentUl = folderList) {
+        folders.forEach(folder => {
+          if (!folder.children) return;
+          const li = document.createElement('li');
+          li.style.flexDirection = 'row';
+          li.style.alignItems = 'center';
+          const fullPath = [...path, folder.title];
+          const pathKey = fullPath.join('/');
+          // 折叠/展开按钮
+          const toggleBtn = document.createElement('button');
+          toggleBtn.className = 'folder-toggle';
+          toggleBtn.innerHTML = window.folderCollapseState[pathKey] ? '▶' : '▼';
+          toggleBtn.onclick = function(e) {
+            e.stopPropagation();
+            window.folderCollapseState[pathKey] = !window.folderCollapseState[pathKey];
+            renderAll();
+          };
+          li.appendChild(toggleBtn);
+          // 文件夹名
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = folder.title;
+          nameSpan.style.flex = '1';
+          // 编辑按钮
+          const editBtn = document.createElement('button');
+          editBtn.className = 'folder-edit-btn';
+          editBtn.title = '编辑';
+          editBtn.innerHTML = '✏️';
+          editBtn.onclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              nameSpan.innerHTML = '';
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.value = folder.title;
+              input.className = 'edit-input';
+              nameSpan.appendChild(input);
+              input.focus();
+              input.onblur = function() {
+                if (input.value.trim() && input.value !== folder.title) {
+                  folder.title = input.value.trim();
+                  saveToLocal();
+                  renderAll();
+                } else {
+                  renderAll();
+                }
+              };
+              input.onkeydown = function(e) {
+                if (e.key === 'Enter') input.blur();
+              };
+            });
+          };
+          // 行内编辑
+          nameSpan.ondblclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.value = folder.title;
+              input.className = 'edit-input';
+              nameSpan.innerHTML = '';
+              nameSpan.appendChild(input);
+              input.focus();
+              input.onblur = function() {
+                if (input.value.trim() && input.value !== folder.title) {
+                  folder.title = input.value.trim();
+                  saveToLocal();
+                  renderAll();
+                } else {
+                  renderAll();
+                }
+              };
+              input.onkeydown = function(e) {
+                if (e.key === 'Enter') input.blur();
+              };
+            });
+          };
+          nameSpan.onclick = function() {
+            selectedFolderPath = fullPath;
+            renderAll();
+          };
+          if (selectedFolderPath.join('/') === pathKey) {
+            li.classList.add('selected');
+          }
+          li.appendChild(nameSpan);
+          li.appendChild(editBtn);
+          // 删除按钮
+          const actions = document.createElement('span');
+          actions.className = 'folder-actions';
+          const delBtn = document.createElement('button');
+          delBtn.className = 'action-btn';
+          delBtn.title = '删除分组';
+          delBtn.innerHTML = '🗑️';
+          delBtn.onclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              if (confirm('确定要删除该分组及其所有内容吗？')) {
+                const parent = getParentFolderByPath(fullPath);
+                const idx = parent.findIndex(f => f.title === folder.title && f.children);
+                if (idx > -1) parent.splice(idx, 1);
+                if (selectedFolderPath.join('/') === pathKey) selectedFolderPath = [];
+                saveToLocal();
+                renderAll();
+              }
+            });
+          };
+          actions.appendChild(delBtn);
+          li.appendChild(actions);
+          parentUl.appendChild(li);
+          // 子分组
+          if (folder.children.some(f => f.children)) {
+            const childrenUl = document.createElement('ul');
+            childrenUl.className = 'children' + (window.folderCollapseState[pathKey] ? ' collapsed' : '');
+            renderFolders(folder.children.filter(f => f.children), fullPath, childrenUl);
+            parentUl.appendChild(childrenUl);
+          }
+        });
+      }
+      renderFolders(bookmarks);
+    }
+
+    // ===== 渲染右侧内容 =====
+    function renderContent() {
+      const folder = getFolderByPath(selectedFolderPath) || null;
+      const title = document.getElementById('currentFolderTitle');
+      const addLinkBtn = document.getElementById('addLinkBtn');
+      const subfoldersList = document.getElementById('subfoldersList');
+      const linksList = document.getElementById('linksList');
+      if (!folder) {
+        title.textContent = '请选择分组';
+        addLinkBtn.style.display = 'none';
+        subfoldersList.innerHTML = '';
+        linksList.innerHTML = '';
+        return;
+      }
+      title.textContent = folder.title;
+      addLinkBtn.style.display = '';
+      // 先移除已存在的新增子分组按钮，避免重复
+      const oldAddBtn = document.getElementById('addSubBtnMain');
+      if (oldAddBtn) oldAddBtn.remove();
+      const addSubBtn = document.createElement('button');
+      addSubBtn.className = 'add-subfolder-btn';
+      addSubBtn.textContent = '+ 新建子分组';
+      addSubBtn.id = 'addSubBtnMain';
+      addSubBtn.onclick = function() {
+        requireAdmin(() => {
+          const name = prompt('请输入新子分组名称：');
+          if (name && name.trim()) {
+            folder.children.push({ title: name.trim(), children: [] });
+            saveToLocal();
+            renderAll();
+          }
+        });
+      };
+      subfoldersList.parentNode.insertBefore(addSubBtn, subfoldersList);
+      // 先渲染当前分组下所有网址
+      linksList.innerHTML = '';
+      folder.children.filter(f => !f.children).forEach(link => {
+        const li = document.createElement('li');
+        // favicon
+        const favicon = document.createElement('img');
+        try {
+          const urlObj = new URL(link.url);
+          favicon.src = 'https://www.google.com/s2/favicons?sz=64&domain=' + urlObj.hostname;
+        } catch {
+          favicon.src = '';
+        }
+        favicon.className = 'favicon';
+        favicon.onerror = function() { this.style.display = 'none'; };
+        li.appendChild(favicon);
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.textContent = link.title;
+        a.target = '_blank';
+        a.style.flex = '1';
+        li.appendChild(a);
+        // 编辑按钮
+        const editBtn = document.createElement('button');
+        editBtn.className = 'action-btn';
+        editBtn.title = '编辑';
+        editBtn.innerHTML = '✏️';
+        editBtn.onclick = function(e) {
+          e.stopPropagation();
+          requireAdmin(() => {
+            let editing = true;
+            li.innerHTML = '';
+            const inputTitle = document.createElement('input');
+            inputTitle.type = 'text';
+            inputTitle.value = link.title;
+            inputTitle.className = 'edit-input';
+            inputTitle.style.width = '8em';
+            const inputUrl = document.createElement('input');
+            inputUrl.type = 'text';
+            inputUrl.value = link.url;
+            inputUrl.className = 'edit-input';
+            inputUrl.style.width = '16em';
+            li.appendChild(inputTitle);
+            li.appendChild(inputUrl);
+            inputTitle.onkeydown = inputUrl.onkeydown = function(e) {
+              if (e.key === 'Enter') {
+                inputUrl.blur();
+                inputTitle.blur();
+              }
+            };
+            inputTitle.onblur = inputUrl.onblur = function() {
+              if (inputTitle.value.trim() && inputUrl.value.trim()) {
+                link.title = inputTitle.value.trim();
+                link.url = inputUrl.value.trim();
+                saveToLocal();
+                editing = false;
+                renderAll();
+              } else {
+                editing = false;
+                renderAll();
+              }
+            };
+            inputTitle.focus();
+          });
+        };
+        li.appendChild(editBtn);
+        // 删除按钮
+        const delBtn = document.createElement('button');
+        delBtn.className = 'action-btn';
+        delBtn.title = '删除';
+        delBtn.innerHTML = '🗑️';
+        delBtn.onclick = function(e) {
+          e.stopPropagation();
+          requireAdmin(() => {
+            if (confirm('确定要删除该网址吗？')) {
+              const idx = folder.children.findIndex(f => f === link);
+              if (idx > -1) folder.children.splice(idx, 1);
+              saveToLocal();
+              renderAll();
+            }
+          });
+        };
+        li.appendChild(delBtn);
+        linksList.appendChild(li);
+      });
+      // 再渲染当前分组下所有子文件夹
+      subfoldersList.innerHTML = '';
+      if (!window.subfolderCollapseState) window.subfolderCollapseState = {};
+      function renderSubfolders(subs, path = [], parentUl = subfoldersList) {
+        subs.forEach(sub => {
+          if (!sub.children) return;
+          const li = document.createElement('li');
+          li.style.flexDirection = 'row';
+          li.style.alignItems = 'center';
+          const fullPath = [...path, sub.title];
+          const pathKey = fullPath.join('/');
+          // 折叠/展开按钮
+          const toggleBtn = document.createElement('button');
+          toggleBtn.className = 'subfolder-toggle';
+          toggleBtn.innerHTML = window.subfolderCollapseState[pathKey] ? '▶' : '▼';
+          toggleBtn.onclick = function(e) {
+            e.stopPropagation();
+            window.subfolderCollapseState[pathKey] = !window.subfolderCollapseState[pathKey];
+            renderAll();
+          };
+          li.appendChild(toggleBtn);
+          // 文件夹名
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = sub.title;
+          nameSpan.style.flex = '1';
+          // 编辑按钮
+          const editBtn = document.createElement('button');
+          editBtn.className = 'subfolder-edit-btn';
+          editBtn.title = '编辑';
+          editBtn.innerHTML = '✏️';
+          editBtn.onclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              nameSpan.innerHTML = '';
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.value = sub.title;
+              input.className = 'edit-input';
+              nameSpan.appendChild(input);
+              input.focus();
+              input.onblur = function() {
+                if (input.value.trim() && input.value !== sub.title) {
+                  sub.title = input.value.trim();
+                  saveToLocal();
+                  renderAll();
+                } else {
+                  renderAll();
+                }
+              };
+              input.onkeydown = function(e) {
+                if (e.key === 'Enter') input.blur();
+              };
+            });
+          };
+          // 行内编辑
+          nameSpan.ondblclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.value = sub.title;
+              input.className = 'edit-input';
+              nameSpan.innerHTML = '';
+              nameSpan.appendChild(input);
+              input.focus();
+              input.onblur = function() {
+                if (input.value.trim() && input.value !== sub.title) {
+                  sub.title = input.value.trim();
+                  saveToLocal();
+                  renderAll();
+                } else {
+                  renderAll();
+                }
+              };
+              input.onkeydown = function(e) {
+                if (e.key === 'Enter') input.blur();
+              };
+            });
+          };
+          nameSpan.onclick = function() {
+            selectedFolderPath = [...path, sub.title];
+            renderAll();
+          };
+          li.appendChild(nameSpan);
+          li.appendChild(editBtn);
+          // 新建子分组按钮（每个子分组下）
+          const addSubBtn = document.createElement('button');
+          addSubBtn.className = 'add-subfolder-btn';
+          addSubBtn.textContent = '+ 新建子分组';
+          addSubBtn.onclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              const name = prompt('请输入新子分组名称：');
+              if (name && name.trim()) {
+                sub.children.push({ title: name.trim(), children: [] });
+                saveToLocal();
+                renderAll();
+              }
+            });
+          };
+          li.appendChild(addSubBtn);
+          // 删除按钮
+          const delBtn = document.createElement('button');
+          delBtn.className = 'action-btn';
+          delBtn.title = '删除子分组';
+          delBtn.innerHTML = '🗑️';
+          delBtn.onclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              if (confirm('确定要删除该子分组及其所有内容吗？')) {
+                const idx = folder.children.findIndex(f => f.title === sub.title && f.children);
+                if (idx > -1) folder.children.splice(idx, 1);
+                saveToLocal();
+                renderAll();
+              }
+            });
+          };
+          li.appendChild(delBtn);
+          parentUl.appendChild(li);
+          // 子分组和网址内容递归（仅未折叠时渲染）
+          if (!window.subfolderCollapseState[pathKey]) {
+            // 下级子分组
+            if (sub.children.some(f => f.children)) {
+              const childrenUl = document.createElement('ul');
+              childrenUl.className = 'children';
+              renderSubfolders(sub.children.filter(f => f.children), fullPath, childrenUl);
+              parentUl.appendChild(childrenUl);
+            }
+            // 下级网址
+            const links = sub.children.filter(f => !f.children);
+            if (links.length > 0) {
+              const linksUl = document.createElement('ul');
+              linksUl.className = 'links-list';
+              links.forEach(link => {
+                const linkLi = document.createElement('li');
+                // favicon
+                const favicon = document.createElement('img');
+                try {
+                  const urlObj = new URL(link.url);
+                  favicon.src = 'https://www.google.com/s2/favicons?sz=64&domain=' + urlObj.hostname;
+                } catch {
+                  favicon.src = '';
+                }
+                favicon.className = 'favicon';
+                favicon.onerror = function() { this.style.display = 'none'; };
+                linkLi.appendChild(favicon);
+                const a = document.createElement('a');
+                a.href = link.url;
+                a.textContent = link.title;
+                a.target = '_blank';
+                a.style.flex = '1';
+                linkLi.appendChild(a);
+                // 编辑按钮
+                const editBtn = document.createElement('button');
+                editBtn.className = 'action-btn';
+                editBtn.title = '编辑';
+                editBtn.innerHTML = '✏️';
+                editBtn.onclick = function(e) {
+                  e.stopPropagation();
+                  requireAdmin(() => {
+                    let editing = true;
+                    linkLi.innerHTML = '';
+                    const inputTitle = document.createElement('input');
+                    inputTitle.type = 'text';
+                    inputTitle.value = link.title;
+                    inputTitle.className = 'edit-input';
+                    inputTitle.style.width = '8em';
+                    const inputUrl = document.createElement('input');
+                    inputUrl.type = 'text';
+                    inputUrl.value = link.url;
+                    inputUrl.className = 'edit-input';
+                    inputUrl.style.width = '16em';
+                    linkLi.appendChild(inputTitle);
+                    linkLi.appendChild(inputUrl);
+                    inputTitle.onkeydown = inputUrl.onkeydown = function(e) {
+                      if (e.key === 'Enter') {
+                        inputUrl.blur();
+                        inputTitle.blur();
+                      }
+                    };
+                    inputTitle.onblur = inputUrl.onblur = function() {
+                      if (inputTitle.value.trim() && inputUrl.value.trim()) {
+                        link.title = inputTitle.value.trim();
+                        link.url = inputUrl.value.trim();
+                        saveToLocal();
+                        editing = false;
+                        renderAll();
+                      } else {
+                        editing = false;
+                        renderAll();
+                      }
+                    };
+                    inputTitle.focus();
+                  });
+                };
+                linkLi.appendChild(editBtn);
+                // 删除按钮
+                const delBtn = document.createElement('button');
+                delBtn.className = 'action-btn';
+                delBtn.title = '删除';
+                delBtn.innerHTML = '🗑️';
+                delBtn.onclick = function(e) {
+                  e.stopPropagation();
+                  requireAdmin(() => {
+                    if (confirm('确定要删除该网址吗？')) {
+                      const idx = sub.children.findIndex(f => f === link);
+                      if (idx > -1) sub.children.splice(idx, 1);
+                      saveToLocal();
+                      renderAll();
+                    }
+                  });
+                };
+                linkLi.appendChild(delBtn);
+                linksUl.appendChild(linkLi);
+              });
+              parentUl.appendChild(linksUl);
+            }
+          }
+        });
+      }
+      renderSubfolders(folder.children.filter(f => f.children));
+    }
+
+    // ===== 渲染全部 =====
+    function renderAll() {
+      renderSidebar();
+      renderContent();
+    }
+
+    // ===== 新建分组/网址 =====
+    document.getElementById('addFolderBtn').onclick = function() {
+      requireAdmin(() => {
+        const name = prompt('请输入新分组名称：');
+        if (name && name.trim()) {
+          bookmarks.push({ title: name.trim(), children: [] });
+          saveToLocal();
+          renderAll();
+        }
+      });
+    };
+    document.getElementById('addLinkBtn').onclick = function() {
+      requireAdmin(() => {
+        const folder = getFolderByPath(selectedFolderPath);
+        if (!folder) return;
+        const title = prompt('请输入网址名称：');
+        if (!title || !title.trim()) return;
+        const url = prompt('请输入网址链接（含 http/https）：');
+        if (!url || !url.trim()) return;
+        folder.children.push({ title: title.trim(), url: url.trim() });
+        saveToLocal();
+        renderAll();
+      });
+    };
+
+    // ===== 书签导入 =====
+    document.getElementById('importBookmarks').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const html = evt.target.result;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        let dl = doc.querySelector('dl');
+        if (!dl) {
+          alert('未找到有效的收藏夹内容');
+          return;
+        }
+        bookmarks = parseBookmarks(dl);
+        selectedFolderPath = [];
+        saveToLocal();
+        renderAll();
+      };
+      reader.readAsText(file, 'utf-8');
+    });
+
+    // ===== 书签HTML解析 =====
+    function parseBookmarks(node) {
+      let result = [];
+      for (let child of node.children) {
+        if (child.tagName === 'DT') {
+          let first = child.firstElementChild;
+          if (!first) continue;
+          if (first.tagName === 'H3') {
+            let folder = {
+              title: first.textContent,
+              children: []
+            };
+            let next = first.nextElementSibling;
+            if (next && next.tagName === 'DL') {
+              folder.children = parseBookmarks(next);
+            }
+            result.push(folder);
+          } else if (first.tagName === 'A') {
+            result.push({
+              title: first.textContent,
+              url: first.getAttribute('HREF'),
+              icon: first.getAttribute('ICON') || '',
+            });
+          }
+        }
+      }
+      return result;
+    }
+
+    // ===== 导出书签 =====
+    document.getElementById('exportBtn').onclick = function() {
+      function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, function(c) {
+          return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c];
+        });
+      }
+      function bookmarksToHtml(bms) {
+        let html = '<!DOCTYPE NETSCAPE-Bookmark-file-1><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"><TITLE>Bookmarks</TITLE><H1>Bookmarks</H1><DL>\n';
+        function walk(arr) {
+          arr.forEach(item => {
+            if (item.children) {
+              html += `<DT><H3>${escapeHtml(item.title)}</H3>\n<DL>\n`;
+              walk(item.children);
+              html += '</DL>\n';
+            } else if (item.url) {
+              html += `<DT><A HREF="${escapeHtml(item.url)}">${escapeHtml(item.title)}</A>\n`;
+            }
+          });
+        }
+        walk(bms);
+        html += '</DL>';
+        return html;
+      }
+      const html = bookmarksToHtml(bookmarks);
+      const blob = new Blob([html], {type: 'text/html'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'bookmarks.html';
+      a.click();
+    };
+
+    // ===== 清空所有网址 =====
+    document.getElementById('clearAllBtn').onclick = function() {
+      requireAdmin(() => {
+        if (confirm('确定要清空所有分组和网址吗？')) {
+          bookmarks = [];
+          selectedFolderPath = [];
+          localStorage.removeItem('myBookmarks');
+          renderAll();
+        }
+      });
+    };
+
+    // ===== 字体和图标大小控制 =====
+    let fontSize = parseFloat(localStorage.getItem('myFontSize')) || 1;
+    let faviconSize = parseInt(localStorage.getItem('myFaviconSize')) || 20;
+    function applyFontAndIconSize() {
+      document.documentElement.style.setProperty('--font-size', fontSize + 'em');
+      document.documentElement.style.setProperty('--favicon-size', faviconSize + 'px');
+    }
+    document.getElementById('fontIncBtn').onclick = function() {
+      fontSize = Math.min(fontSize + 0.1, 2);
+      localStorage.setItem('myFontSize', fontSize);
+      applyFontAndIconSize();
+    };
+    document.getElementById('fontDecBtn').onclick = function() {
+      fontSize = Math.max(fontSize - 0.1, 0.7);
+      localStorage.setItem('myFontSize', fontSize);
+      applyFontAndIconSize();
+    };
+    document.getElementById('iconIncBtn').onclick = function() {
+      faviconSize = Math.min(faviconSize + 4, 64);
+      localStorage.setItem('myFaviconSize', faviconSize);
+      applyFontAndIconSize();
+    };
+    document.getElementById('iconDecBtn').onclick = function() {
+      faviconSize = Math.max(faviconSize - 4, 12);
+      localStorage.setItem('myFaviconSize', faviconSize);
+      applyFontAndIconSize();
+    };
+    applyFontAndIconSize();
+
+    // ===== 左右宽度拖动与记忆 =====
+    const sidebar = document.querySelector('.sidebar');
+    const resizer = document.getElementById('resizer');
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+    function setSidebarWidth(w) {
+      sidebar.style.width = w + 'px';
+      localStorage.setItem('sidebarWidth', w);
+    }
+    resizer.addEventListener('mousedown', function(e) {
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = sidebar.offsetWidth;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'ew-resize';
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!isResizing) return;
+      let newWidth = Math.max(120, Math.min(startWidth + (e.clientX - startX), window.innerWidth * 0.6));
+      setSidebarWidth(newWidth);
+    });
+    document.addEventListener('mouseup', function() {
+      if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('active');
+        document.body.style.cursor = '';
+      }
+    });
+    // 初始化记忆宽度
+    const savedW = parseInt(localStorage.getItem('sidebarWidth'));
+    if (savedW && !isNaN(savedW)) setSidebarWidth(savedW);
+
+    // ===== 页面初始化 =====
+    window.addEventListener('DOMContentLoaded', function() {
+      const saved = loadFromLocal();
+      if (saved) bookmarks = saved;
+      renderAll();
+    });
+  </script>
+</body>
+</html>
