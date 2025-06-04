@@ -362,60 +362,45 @@
     .subfolder-edit-btn:hover {
       color: var(--primary);
     }
-    .topbar {
+    .actionbar {
       display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 0.7em 1em;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: var(--bg);
-      padding: 0.7em 0 0.7em 0;
-      margin-bottom: 1em;
       flex-wrap: wrap;
+      gap: 0.7em;
+      align-items: center;
       justify-content: flex-start;
       width: 100%;
       box-sizing: border-box;
+      background: var(--bg);
+      padding: 0.7em 0 0.7em 0;
+      margin-bottom: 1em;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
-    .topbar > * {
-      flex: 0 0 auto;
-      margin-bottom: 0;
-    }
-    .topbar button {
+    .actionbar .action-btn {
       background: var(--sidebar-bg);
       color: var(--primary);
       border: 1px solid var(--primary);
       border-radius: 6px;
-      padding: 0.3em 1em;
+      padding: 0.3em 1.2em;
       font-size: 1em;
       cursor: pointer;
       transition: background 0.2s, color 0.2s;
-      min-width: 2.5em;
+      min-width: 5.2em;
       min-height: 2.2em;
       line-height: 1.5em;
       box-sizing: border-box;
+      text-align: center;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .topbar button:hover {
+    .actionbar .action-btn:hover {
       background: var(--primary);
       color: #fff;
     }
-    .topbar .icon-btn {
-      padding: 0.3em 0.7em;
-      font-size: 1.2em;
-      min-width: 2.2em;
-      min-height: 2.2em;
-    }
-    .topbar .label {
-      color: var(--text);
-      font-size: 1em;
-      margin: 0 0.2em;
-      user-select: none;
-      min-height: 2.2em;
-      display: flex;
-      align-items: center;
-    }
-    .links-list li, .subfolders-list li, .folder-list li, .content-header h1, .topbar, .topbar button, .topbar .label {
+    .links-list li, .subfolders-list li, .folder-list li, .content-header h1, .actionbar, .actionbar button, .actionbar .label {
       font-size: var(--font-size, 1em);
       transition: font-size 0.2s;
     }
@@ -470,17 +455,17 @@
     </nav>
     <div class="resizer" id="resizer"></div>
     <main class="content">
-      <div class="topbar">
-        <button class="theme-btn" id="themeBtn">主题</button>
-        <button class="settings-btn" id="settingsBtn">设置</button>
-        <button class="export-btn" id="exportBtn">导出书签</button>
-        <button class="settings-btn" id="clearAllBtn">清空所有</button>
-        <span class="label">字号</span>
-        <button class="icon-btn" id="fontIncBtn">A+</button>
-        <button class="icon-btn" id="fontDecBtn">A-</button>
-        <span class="label">图标</span>
-        <button class="icon-btn" id="iconIncBtn">🔍+</button>
-        <button class="icon-btn" id="iconDecBtn">🔍-</button>
+      <div class="actionbar">
+        <button class="action-btn" id="toggleExpandBtn">展开</button>
+        <button class="action-btn" id="fontIncBtn">字体+</button>
+        <button class="action-btn" id="fontDecBtn">字体-</button>
+        <button class="action-btn" id="iconIncBtn">图标+</button>
+        <button class="action-btn" id="iconDecBtn">图标-</button>
+        <button class="action-btn" id="themeBtn">主题</button>
+        <button class="action-btn" id="clearAllBtn">清空</button>
+        <button class="action-btn" id="exportBtn">导出</button>
+        <button class="action-btn" id="addSubBtnGlobal">新子分组</button>
+        <button class="action-btn" id="settingsBtn">设置</button>
       </div>
       <div class="content-header">
         <h1 id="currentFolderTitle">请选择分组</h1>
@@ -727,24 +712,6 @@
       }
       title.textContent = folder.title;
       addLinkBtn.style.display = '';
-      // 先移除已存在的新增子分组按钮，避免重复
-      const oldAddBtn = document.getElementById('addSubBtnMain');
-      if (oldAddBtn) oldAddBtn.remove();
-      const addSubBtn = document.createElement('button');
-      addSubBtn.className = 'add-subfolder-btn';
-      addSubBtn.textContent = '+ 新建子分组';
-      addSubBtn.id = 'addSubBtnMain';
-      addSubBtn.onclick = function() {
-        requireAdmin(() => {
-          const name = prompt('请输入新子分组名称：');
-          if (name && name.trim()) {
-            folder.children.push({ title: name.trim(), children: [] });
-            saveToLocal();
-            renderAll();
-          }
-        });
-      };
-      subfoldersList.parentNode.insertBefore(addSubBtn, subfoldersList);
       // 先渲染当前分组下所有网址
       linksList.innerHTML = '';
       folder.children.filter(f => !f.children).forEach(link => {
@@ -908,8 +875,10 @@
               };
             });
           };
-          nameSpan.onclick = function() {
-            selectedFolderPath = [...path, sub.title];
+          // 只展开/收起，不切换分组
+          nameSpan.onclick = function(e) {
+            e.stopPropagation();
+            window.subfolderCollapseState[pathKey] = !window.subfolderCollapseState[pathKey];
             renderAll();
           };
           li.appendChild(nameSpan);
@@ -1154,26 +1123,45 @@
       });
     };
 
-    // ===== 书签导入 =====
-    document.getElementById('importBookmarks').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const html = evt.target.result;
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        let dl = doc.querySelector('dl');
-        if (!dl) {
-          alert('未找到有效的收藏夹内容');
+    // ===== 新子分组按钮（全局） =====
+    document.getElementById('addSubBtnGlobal').onclick = function() {
+      requireAdmin(() => {
+        let folder = getFolderByPath(selectedFolderPath);
+        if (!folder) {
+          alert('请先选择一个分组或子分组');
           return;
         }
-        bookmarks = parseBookmarks(dl);
-        selectedFolderPath = [];
-        saveToLocal();
-        renderAll();
-      };
-      reader.readAsText(file, 'utf-8');
+        const name = prompt('请输入新子分组名称：');
+        if (name && name.trim()) {
+          folder.children.push({ title: name.trim(), children: [] });
+          saveToLocal();
+          renderAll();
+        }
+      });
+    };
+
+    // ===== 书签导入 =====
+    document.getElementById('importBookmarks').addEventListener('change', function(e) {
+      requireAdmin(() => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const html = evt.target.result;
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          let dl = doc.querySelector('dl');
+          if (!dl) {
+            alert('未找到有效的收藏夹内容');
+            return;
+          }
+          bookmarks = parseBookmarks(dl);
+          selectedFolderPath = [];
+          saveToLocal();
+          renderAll();
+        };
+        reader.readAsText(file, 'utf-8');
+      });
     });
 
     // ===== 书签HTML解析 =====
@@ -1316,7 +1304,89 @@
       const saved = loadFromLocal();
       if (saved) bookmarks = saved;
       renderAll();
+      updateToggleExpandBtn();
     });
+
+    // ===== 右栏一键展开/收起按钮逻辑 =====
+    function updateToggleExpandBtn() {
+      const btn = document.getElementById('toggleExpandBtn');
+      if (!btn) return;
+      let folder = getFolderByPath(selectedFolderPath);
+      if (!folder || !folder.children) {
+        btn.style.display = 'none';
+        return;
+      }
+      // 收集所有右栏子分组pathKey（递归所有层级，所有有children的节点）
+      const rightSubfolders = [];
+      function collectAllSubfolderKeysDeep(subs, path = []) {
+        subs.forEach(sub => {
+          if (sub.children && Array.isArray(sub.children)) {
+            const fullPath = [...path, sub.title];
+            rightSubfolders.push(fullPath.join('/'));
+            if (sub.children.length > 0) {
+              collectAllSubfolderKeysDeep(sub.children.filter(f => f.children), fullPath);
+            }
+          }
+        });
+      }
+      collectAllSubfolderKeysDeep(folder.children.filter(f => f.children), selectedFolderPath);
+      if (rightSubfolders.length === 0) {
+        btn.style.display = 'none';
+        return;
+      }
+      btn.style.display = '';
+      let hasCollapsed = false;
+      for (const key of rightSubfolders) {
+        if (window.subfolderCollapseState[key]) {
+          hasCollapsed = true;
+          break;
+        }
+      }
+      btn.textContent = hasCollapsed ? '展开' : '收起';
+      // 调试辅助
+      //console.log('右栏所有子分组pathKey:', rightSubfolders, '当前状态:', hasCollapsed);
+    }
+
+    document.getElementById('toggleExpandBtn').onclick = function() {
+      let folder = getFolderByPath(selectedFolderPath);
+      if (!folder || !folder.children) return;
+      // 收集所有右栏子分组pathKey（递归所有层级，所有有children的节点）
+      const rightSubfolders = [];
+      function collectAllSubfolderKeysDeep(subs, path = []) {
+        subs.forEach(sub => {
+          if (sub.children && Array.isArray(sub.children)) {
+            const fullPath = [...path, sub.title];
+            rightSubfolders.push(fullPath.join('/'));
+            if (sub.children.length > 0) {
+              collectAllSubfolderKeysDeep(sub.children.filter(f => f.children), fullPath);
+            }
+          }
+        });
+      }
+      collectAllSubfolderKeysDeep(folder.children.filter(f => f.children), selectedFolderPath);
+      let hasCollapsed = false;
+      for (const key of rightSubfolders) {
+        if (window.subfolderCollapseState[key]) {
+          hasCollapsed = true;
+          break;
+        }
+      }
+      // 一次性设置所有pathKey的状态
+      for (const key of rightSubfolders) {
+        window.subfolderCollapseState[key] = !hasCollapsed;
+      }
+      // 调试辅助
+      //console.log('设置后右栏所有子分组pathKey:', rightSubfolders, '目标状态:', !hasCollapsed);
+      renderAll();
+      updateToggleExpandBtn();
+    };
+
+    // 每次渲染内容后都更新按钮状态
+    const oldRenderContent = renderContent;
+    renderContent = function() {
+      oldRenderContent();
+      updateToggleExpandBtn();
+    };
   </script>
 </body>
 </html>
