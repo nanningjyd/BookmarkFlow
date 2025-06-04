@@ -311,9 +311,18 @@
     }
     .subfolders-list li {
       position: relative;
-      display: flex;
-      align-items: center;
       gap: 0.3em;
+      display: block;
+    }
+    .subfolders-list ul,
+    .children {
+      margin-left: 2em !important;
+      padding-left: 0.5em;
+      border-left: 2px dashed #e0e6ed;
+      display: block;
+    }
+    .subfolders-list {
+      display: block;
     }
     .subfolder-toggle {
       font-size: 1.1em;
@@ -329,14 +338,6 @@
     }
     .subfolders-list .collapsed > .subfolder-toggle {
       transform: rotate(-90deg);
-    }
-    .subfolders-list .children {
-      margin-left: 1.2em;
-      padding-left: 0.5em;
-      border-left: 2px dashed #e0e6ed;
-    }
-    .subfolders-list .children.collapsed {
-      display: none;
     }
     .folder-edit-btn {
       background: none;
@@ -423,6 +424,11 @@
       flex-wrap: wrap;
       gap: 0.7em;
       align-items: center;
+    }
+    .subfolder-header {
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
     }
     @media (max-width: 900px) {
       .main-layout {
@@ -536,6 +542,68 @@
       }
     };
 
+    // ===== 唯一ID生成工具 =====
+    function generateId() {
+      return 'id-' + Math.random().toString(36).substr(2, 9) + Date.now();
+    }
+    // ===== 递归为所有节点补全唯一ID =====
+    function ensureIds(arr) {
+      arr.forEach(item => {
+        if (!item.id) item.id = generateId();
+        if (item.children) ensureIds(item.children);
+      });
+    }
+    // ===== 递归查找节点（返回节点和父数组） =====
+    function findNodeById(id, arr = bookmarks, parent = null) {
+      for (let i = 0; i < arr.length; i++) {
+        const node = arr[i];
+        if (node.id === id) return { node, parent: arr, index: i };
+        if (node.children) {
+          const res = findNodeById(id, node.children, node.children);
+          if (res) return res;
+        }
+      }
+      return null;
+    }
+    // ===== 递归删除节点（返回被删除节点） =====
+    function removeNodeById(id, arr = bookmarks) {
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].id === id) {
+          return arr.splice(i, 1)[0];
+        }
+        if (arr[i].children) {
+          const res = removeNodeById(id, arr[i].children);
+          if (res) return res;
+        }
+      }
+      return null;
+    }
+    // ===== 递归插入节点到指定分组id下 =====
+    function insertNodeById(targetId, node, arr = bookmarks) {
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].id === targetId && arr[i].children) {
+          arr[i].children.push(node);
+          return true;
+        }
+        if (arr[i].children) {
+          if (insertNodeById(targetId, node, arr[i].children)) return true;
+        }
+      }
+      return false;
+    }
+    // ===== 递归收集所有分组节点（含id/path） =====
+    function getAllFolderNodes(arr = bookmarks, path = []) {
+      let result = [];
+      arr.forEach(folder => {
+        if (folder.children) {
+          const fullPath = [...path, folder.title];
+          result.push({ id: folder.id, path: fullPath, title: folder.title });
+          result = result.concat(getAllFolderNodes(folder.children, fullPath));
+        }
+      });
+      return result;
+    }
+
     // ===== 数据结构与本地存储 =====
     let bookmarks = [];
     let selectedFolderPath = [];
@@ -568,6 +636,19 @@
         parent = node.children;
       }
       return parent;
+    }
+
+    // ===== 工具函数：递归获取所有分组路径 =====
+    function getAllFolderPaths(arr = bookmarks, path = []) {
+      let result = [];
+      arr.forEach(folder => {
+        if (folder.children) {
+          const fullPath = [...path, folder.title];
+          result.push(fullPath);
+          result = result.concat(getAllFolderPaths(folder.children, fullPath));
+        }
+      });
+      return result;
     }
 
     // ===== 渲染侧边栏分组 =====
@@ -794,6 +875,68 @@
           });
         };
         li.appendChild(delBtn);
+        // 移动按钮
+        const moveBtn = document.createElement('button');
+        moveBtn.className = 'action-btn';
+        moveBtn.title = '移动';
+        moveBtn.innerHTML = '📁';
+        moveBtn.onclick = function(e) {
+          e.stopPropagation();
+          requireAdmin(() => {
+            const allFolders = getAllFolderNodes();
+            // 不能移动到自己或子孙分组
+            let invalidIds = [];
+            function collectDescendants(node) {
+              if (node.children) {
+                invalidIds.push(node.id);
+                node.children.forEach(child => {
+                  if (child.children) collectDescendants(child);
+                });
+              }
+            }
+            collectDescendants(folder);
+            let options = allFolders.filter(f => !invalidIds.includes(f.id)).map(f => `<option value="${f.id}">${f.path.join(' / ')}</option>`).join('');
+            let sel = document.createElement('select');
+            sel.innerHTML = `<option value="">请选择目标分组</option>` + options;
+            sel.style.fontSize = '1em';
+            sel.style.marginLeft = '0.5em';
+            let dialog = document.createElement('div');
+            dialog.style.position = 'fixed';
+            dialog.style.left = '50%';
+            dialog.style.top = '50%';
+            dialog.style.transform = 'translate(-50%,-50%)';
+            dialog.style.background = '#fff';
+            dialog.style.padding = '1em';
+            dialog.style.border = '1px solid #ccc';
+            dialog.style.zIndex = 9999;
+            dialog.innerHTML = `<div style="margin-bottom:0.5em;">选择目标分组：</div>`;
+            dialog.appendChild(sel);
+            let okBtn = document.createElement('button');
+            okBtn.textContent = '确定';
+            okBtn.style.marginLeft = '1em';
+            dialog.appendChild(okBtn);
+            let cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '取消';
+            cancelBtn.style.marginLeft = '0.5em';
+            dialog.appendChild(cancelBtn);
+            document.body.appendChild(dialog);
+            okBtn.onclick = function() {
+              const val = sel.value;
+              if (!val) return;
+              // 1. 删除自身
+              const removed = removeNodeById(link.id);
+              // 2. 插入到目标分组
+              insertNodeById(val, removed);
+              saveToLocal();
+              renderAll();
+              document.body.removeChild(dialog);
+            };
+            cancelBtn.onclick = function() {
+              document.body.removeChild(dialog);
+            };
+          });
+        };
+        li.appendChild(moveBtn);
         linksList.appendChild(li);
       });
       // 再渲染当前分组下所有子文件夹
@@ -803,8 +946,9 @@
         subs.forEach(sub => {
           if (!sub.children) return;
           const li = document.createElement('li');
-          li.style.flexDirection = 'row';
-          li.style.alignItems = 'center';
+          // 分组头部
+          const header = document.createElement('div');
+          header.className = 'subfolder-header';
           const fullPath = [...path, sub.title];
           const pathKey = fullPath.join('/');
           // 折叠/展开按钮
@@ -816,7 +960,7 @@
             window.subfolderCollapseState[pathKey] = !window.subfolderCollapseState[pathKey];
             renderAll();
           };
-          li.appendChild(toggleBtn);
+          header.appendChild(toggleBtn);
           // 文件夹名
           const nameSpan = document.createElement('span');
           nameSpan.textContent = sub.title;
@@ -881,8 +1025,8 @@
             window.subfolderCollapseState[pathKey] = !window.subfolderCollapseState[pathKey];
             renderAll();
           };
-          li.appendChild(nameSpan);
-          li.appendChild(editBtn);
+          header.appendChild(nameSpan);
+          header.appendChild(editBtn);
           // 新建子分组按钮（每个子分组下）
           const addSubBtn = document.createElement('button');
           addSubBtn.className = 'add-subfolder-btn';
@@ -892,13 +1036,13 @@
             requireAdmin(() => {
               const name = prompt('请输入新子分组名称：');
               if (name && name.trim()) {
-                sub.children.push({ title: name.trim(), children: [] });
+                sub.children.push({ title: name.trim(), children: [], id: generateId() });
                 saveToLocal();
                 renderAll();
               }
             });
           };
-          li.appendChild(addSubBtn);
+          header.appendChild(addSubBtn);
           // 删除按钮
           const delBtn = document.createElement('button');
           delBtn.className = 'action-btn';
@@ -915,18 +1059,79 @@
               }
             });
           };
-          li.appendChild(delBtn);
+          header.appendChild(delBtn);
+          // 移动按钮（分组/子分组）
+          const moveBtn = document.createElement('button');
+          moveBtn.className = 'action-btn';
+          moveBtn.title = '移动';
+          moveBtn.innerHTML = '📁';
+          moveBtn.onclick = function(e) {
+            e.stopPropagation();
+            requireAdmin(() => {
+              const allFolders = getAllFolderNodes();
+              let invalidIds = [];
+              function collectDescendants(node) {
+                if (node.children) {
+                  invalidIds.push(node.id);
+                  node.children.forEach(child => {
+                    if (child.children) collectDescendants(child);
+                  });
+                }
+              }
+              collectDescendants(sub);
+              let options = allFolders.filter(f => !invalidIds.includes(f.id)).map(f => `<option value="${f.id}">${f.path.join(' / ')}</option>`).join('');
+              let sel = document.createElement('select');
+              sel.innerHTML = `<option value="">请选择目标分组</option>` + options;
+              sel.style.fontSize = '1em';
+              sel.style.marginLeft = '0.5em';
+              let dialog = document.createElement('div');
+              dialog.style.position = 'fixed';
+              dialog.style.left = '50%';
+              dialog.style.top = '50%';
+              dialog.style.transform = 'translate(-50%,-50%)';
+              dialog.style.background = '#fff';
+              dialog.style.padding = '1em';
+              dialog.style.border = '1px solid #ccc';
+              dialog.style.zIndex = 9999;
+              dialog.innerHTML = `<div style="margin-bottom:0.5em;">选择目标分组：</div>`;
+              dialog.appendChild(sel);
+              let okBtn = document.createElement('button');
+              okBtn.textContent = '确定';
+              okBtn.style.marginLeft = '1em';
+              dialog.appendChild(okBtn);
+              let cancelBtn = document.createElement('button');
+              cancelBtn.textContent = '取消';
+              cancelBtn.style.marginLeft = '0.5em';
+              dialog.appendChild(cancelBtn);
+              document.body.appendChild(dialog);
+              okBtn.onclick = function() {
+                const val = sel.value;
+                if (!val) return;
+                // 1. 删除自身
+                const removed = removeNodeById(sub.id);
+                // 2. 插入到目标分组
+                insertNodeById(val, removed);
+                saveToLocal();
+                renderAll();
+                document.body.removeChild(dialog);
+              };
+              cancelBtn.onclick = function() {
+                document.body.removeChild(dialog);
+              };
+            });
+          };
+          header.appendChild(moveBtn);
+          li.appendChild(header);
           parentUl.appendChild(li);
-          // 子分组和网址内容递归（仅未折叠时渲染）
+          // 子分组递归渲染，无论是否折叠
+          if (sub.children.some(f => f.children)) {
+            const childrenUl = document.createElement('ul');
+            childrenUl.className = 'children' + (window.subfolderCollapseState[pathKey] ? ' collapsed' : '');
+            renderSubfolders(sub.children.filter(f => f.children), fullPath, childrenUl);
+            li.appendChild(childrenUl);
+          }
+          // 下级网址只在未折叠时渲染
           if (!window.subfolderCollapseState[pathKey]) {
-            // 下级子分组
-            if (sub.children.some(f => f.children)) {
-              const childrenUl = document.createElement('ul');
-              childrenUl.className = 'children';
-              renderSubfolders(sub.children.filter(f => f.children), fullPath, childrenUl);
-              parentUl.appendChild(childrenUl);
-            }
-            // 下级网址
             const links = sub.children.filter(f => !f.children);
             if (links.length > 0) {
               const linksUl = document.createElement('ul');
@@ -1013,12 +1218,13 @@
                 linkLi.appendChild(delBtn);
                 linksUl.appendChild(linkLi);
               });
-              parentUl.appendChild(linksUl);
+              li.appendChild(linksUl);
             }
           }
         });
       }
-      renderSubfolders(folder.children.filter(f => f.children));
+      // 顶层调用
+      renderSubfolders(folder.children.filter(f => f.children), selectedFolderPath, subfoldersList);
     }
 
     // ===== 渲染全部 =====
@@ -1103,7 +1309,7 @@
       requireAdmin(() => {
         const name = prompt('请输入新分组名称：');
         if (name && name.trim()) {
-          bookmarks.push({ title: name.trim(), children: [] });
+          bookmarks.push({ title: name.trim(), children: [], id: generateId() });
           saveToLocal();
           renderAll();
         }
@@ -1117,7 +1323,7 @@
         if (!title || !title.trim()) return;
         const url = prompt('请输入网址链接（含 http/https）：');
         if (!url || !url.trim()) return;
-        folder.children.push({ title: title.trim(), url: url.trim() });
+        folder.children.push({ title: title.trim(), url: url.trim(), id: generateId() });
         saveToLocal();
         renderAll();
       });
@@ -1133,7 +1339,7 @@
         }
         const name = prompt('请输入新子分组名称：');
         if (name && name.trim()) {
-          folder.children.push({ title: name.trim(), children: [] });
+          folder.children.push({ title: name.trim(), children: [], id: generateId() });
           saveToLocal();
           renderAll();
         }
@@ -1156,6 +1362,7 @@
             return;
           }
           bookmarks = parseBookmarks(dl);
+          ensureIds(bookmarks); // 补全ID
           selectedFolderPath = [];
           saveToLocal();
           renderAll();
@@ -1174,7 +1381,8 @@
           if (first.tagName === 'H3') {
             let folder = {
               title: first.textContent,
-              children: []
+              children: [],
+              id: generateId()
             };
             let next = first.nextElementSibling;
             if (next && next.tagName === 'DL') {
@@ -1186,6 +1394,7 @@
               title: first.textContent,
               url: first.getAttribute('HREF'),
               icon: first.getAttribute('ICON') || '',
+              id: generateId()
             });
           }
         }
@@ -1303,6 +1512,7 @@
     window.addEventListener('DOMContentLoaded', function() {
       const saved = loadFromLocal();
       if (saved) bookmarks = saved;
+      ensureIds(bookmarks); // 补全ID
       renderAll();
       updateToggleExpandBtn();
     });
@@ -1323,9 +1533,8 @@
           if (sub.children && Array.isArray(sub.children)) {
             const fullPath = [...path, sub.title];
             rightSubfolders.push(fullPath.join('/'));
-            if (sub.children.length > 0) {
-              collectAllSubfolderKeysDeep(sub.children.filter(f => f.children), fullPath);
-            }
+            // 递归所有层级
+            collectAllSubfolderKeysDeep(sub.children.filter(f => f.children), fullPath);
           }
         });
       }
@@ -1343,8 +1552,6 @@
         }
       }
       btn.textContent = hasCollapsed ? '展开' : '收起';
-      // 调试辅助
-      //console.log('右栏所有子分组pathKey:', rightSubfolders, '当前状态:', hasCollapsed);
     }
 
     document.getElementById('toggleExpandBtn').onclick = function() {
@@ -1357,9 +1564,8 @@
           if (sub.children && Array.isArray(sub.children)) {
             const fullPath = [...path, sub.title];
             rightSubfolders.push(fullPath.join('/'));
-            if (sub.children.length > 0) {
-              collectAllSubfolderKeysDeep(sub.children.filter(f => f.children), fullPath);
-            }
+            // 递归所有层级
+            collectAllSubfolderKeysDeep(sub.children.filter(f => f.children), fullPath);
           }
         });
       }
@@ -1375,8 +1581,6 @@
       for (const key of rightSubfolders) {
         window.subfolderCollapseState[key] = !hasCollapsed;
       }
-      // 调试辅助
-      //console.log('设置后右栏所有子分组pathKey:', rightSubfolders, '目标状态:', !hasCollapsed);
       renderAll();
       updateToggleExpandBtn();
     };
