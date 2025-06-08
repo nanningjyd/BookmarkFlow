@@ -354,7 +354,10 @@ async function 侧键测试2() {
 				//await 节点EX("index", "1", "xpath", "16", "bro", "2", "关闭8")
 				await 节点EX("index", "0", "xpath", "5", "bro", "2", "关闭9")
 				await 节点EX("index", "0", "xpath", "7", "bro", "2", "关闭10")
-				await 节点EX("index","0","xpath","13","bro","5","visible","true","packageName","com.esim.numero","关闭11")
+				await 节点GT("index","4","xpath","8","bro","5","id","last-chance-endcard-next-button","关闭11")
+				await 节点EX("index", "0", "xpath", "13", "bro", "5", "visible", "true", "packageName",
+					"com.esim.numero", "关闭12")
+				await 节点GT("index","1","xpath","9","bro","99","id","next-button","关闭13")
 				await 节点EX("index", "0", "xpath", "8", "bro", "6", "text", "退出", "退出")
 				await 节点EX("index", "0", "xpath", "14", "bro", "2", "packageName", "com.esim.numero", "nu的广告返回")
 				await 节点EX("index", "0", "xpath", "14", "bro", "2", "packageName", "com.esim.numero", "visible",
@@ -363,8 +366,8 @@ async function 侧键测试2() {
 					"com.esim.numero", "nu的广告返回3")
 				await 节点GT("index", "0", "xpath", "14", "bro", "5", "visible", "true", "packageName",
 					"com.esim.numero", "nu的广告返回4")
-				await 节点GT("index", "0", "xpath", "14", "bro", "3", "visible", "true", "packageName",
-					"com.esim.numero", "nu的广告返回5")
+				//await 节点GT("index", "0", "xpath", "14", "bro", "3", "visible", "true", "packageName",
+					//"com.esim.numero", "nu的广告返回5")
 				await 节点EX("index", "0", "xpath", "14", "bro", "2", "visible", "true", "packageName",
 					"com.esim.numero", "nu的广告返回6")
 				await 节点EX("index", "1", "xpath", "16", "bro", "8", "packageName", "com.android.vending",
@@ -409,7 +412,8 @@ async function 侧键测试2() {
 				await 节点EX("text", "Free Coins Center", "Free Coins Center")
 				await sleep(1000);
 				退出 = await 节点识别("text", "搜索应用和游戏", "搜索应用和游戏") > 0 || await 节点识别("text", "寒霜启示录", "寒霜启示录") > 0 ||
-					await 节点识别("text", "包含内购商品", "包含内购商品") > 0
+					await 节点识别("text", "包含内购商品", "包含内购商品") > 0 || await 节点识别("text", "Google Play Pass",
+						"Google Play Pass") > 0
 				if (退出) {
 					acc.accinputcode(1)
 				}
