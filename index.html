@@ -25,16 +25,16 @@
       --card-shadow: rgba(0,0,0,0.03);
     }
     body.theme-dark {
-      --bg: #181c27;
-      --text: #e0e6ed;
-      --primary: #2d8cf0;
-      --sidebar-bg: #232a3b;
+      --bg: #13151a;
+      --text: #fff;
+      --primary: #3b8cff;
+      --sidebar-bg: #181c27;
       --sidebar-border: #232a3b;
-      --card-bg: #232a3b;
-      --card-shadow: rgba(0,0,0,0.18);
+      --card-bg: #181c27;
+      --card-shadow: rgba(0,0,0,0.28);
     }
     body.theme-blue {
-      --bg: #eaf3ff;
+      --bg: linear-gradient(135deg, #eaf3ff 0%, #cbe5ff 100%);
       --text: #1a2b4c;
       --primary: #1769aa;
       --sidebar-bg: #f7fbff;
@@ -43,13 +43,59 @@
       --card-shadow: rgba(23,105,170,0.06);
     }
     body.theme-green {
-      --bg: #eafaf1;
+      --bg: linear-gradient(135deg, #eafaf1 0%, #c8f7e5 100%);
       --text: #1a4c2b;
       --primary: #1abc9c;
       --sidebar-bg: #f7fffb;
       --sidebar-border: #b3fdd8;
       --card-bg: #fff;
       --card-shadow: rgba(26,188,156,0.06);
+    }
+    body.theme-purple {
+      --bg: linear-gradient(135deg, #f3eaff 0%, #e0d7fa 100%);
+      --text: #3d246c;
+      --primary: #a259e6;
+      --sidebar-bg: #f8f4ff;
+      --sidebar-border: #d1b3fd;
+      --card-bg: #fff;
+      --card-shadow: rgba(162,89,230,0.08);
+    }
+    body.theme-orange {
+      --bg: linear-gradient(135deg, #fff3e6 0%, #ffe0e0 100%);
+      --text: #7a3e1d;
+      --primary: #ff7e5f;
+      --sidebar-bg: #fff7f0;
+      --sidebar-border: #ffd1b3;
+      --card-bg: #fff;
+      --card-shadow: rgba(255,126,95,0.08);
+    }
+    body.theme-glass {
+      --bg: linear-gradient(135deg, #e0eafc 0%, #f8f9fa 100%);
+      --text: #222;
+      --primary: #6a82fb;
+      --sidebar-bg: rgba(255,255,255,0.7);
+      --sidebar-border: #e0e6ed;
+      --card-bg: rgba(255,255,255,0.6);
+      --card-shadow: rgba(106,130,251,0.10);
+      backdrop-filter: blur(8px);
+    }
+    body.theme-darkblue {
+      --bg: linear-gradient(135deg, #0a192f 0%, #1c2541 100%);
+      --text: #f8fafd;
+      --primary: #2196f3;
+      --sidebar-bg: #16213e;
+      --sidebar-border: #233554;
+      --card-bg: #1b263b;
+      --card-shadow: rgba(33,150,243,0.10);
+    }
+    body.theme-darkpurple {
+      --bg: linear-gradient(135deg, #1a1333 0%, #2d1846 100%);
+      --text: #f6eaff;
+      --primary: #a259e6;
+      --sidebar-bg: #231942;
+      --sidebar-border: #3d246c;
+      --card-bg: #2d1846;
+      --card-shadow: rgba(162,89,230,0.18);
     }
     .main-layout {
       display: flex;
@@ -68,6 +114,9 @@
       overflow-y: auto;
       min-width: 120px;
       max-width: 60vw;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px var(--card-shadow), 0 1.5px 0 var(--sidebar-border);
+      backdrop-filter: blur(4px);
     }
     .resizer {
       width: 6px;
@@ -104,11 +153,15 @@
       position: relative;
       gap: 0.3em;
       margin-bottom: 0.3em;
+      box-shadow: 0 2px 12px var(--card-shadow);
+      border: 1.5px solid #ececec22;
+      background: var(--card-bg);
     }
     .folder-list li.selected {
-      background: #eaf3ff;
-      color: var(--primary);
+      background: linear-gradient(90deg, var(--primary) 0%, #fff0 100%);
+      color: #fff;
       font-weight: bold;
+      box-shadow: 0 2px 12px var(--card-shadow);
     }
     .folder-actions {
       display: flex;
@@ -118,13 +171,16 @@
       background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 0.4em 1em;
       font-size: 1em;
       cursor: pointer;
       margin-top: 0.5em;
       transition: background 0.2s;
       margin-bottom: 0.5em;
+      box-shadow: 0 1px 4px #0001;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
     .add-folder-btn:hover {
       background: #1769aa;
@@ -133,7 +189,7 @@
       background: #fff;
       color: var(--primary);
       border: 1px solid var(--primary);
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 0.2em 0.7em;
       font-size: 0.95em;
       cursor: pointer;
@@ -141,6 +197,7 @@
       margin-top: 0.2em;
       margin-bottom: 0.2em;
       transition: background 0.2s, color 0.2s;
+      box-shadow: 0 1px 4px #0001;
     }
     .add-subfolder-btn:hover {
       background: var(--primary);
@@ -154,12 +211,13 @@
       background: var(--sidebar-bg);
       color: var(--primary);
       border: 1px solid var(--primary);
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 0.3em 1em;
       font-size: 1em;
       cursor: pointer;
       margin-left: 1em;
       transition: background 0.2s, color 0.2s;
+      box-shadow: 0 1px 4px #0001;
     }
     .theme-btn:hover {
       background: var(--primary);
@@ -173,12 +231,13 @@
       background: var(--sidebar-bg);
       color: var(--primary);
       border: 1px solid var(--primary);
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 0.3em 1em;
       font-size: 1em;
       cursor: pointer;
       margin-left: 1em;
       transition: background 0.2s, color 0.2s;
+      box-shadow: 0 1px 4px #0001;
     }
     .settings-btn:hover {
       background: var(--primary);
@@ -192,12 +251,13 @@
       background: var(--sidebar-bg);
       color: var(--primary);
       border: 1px solid var(--primary);
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 0.3em 1em;
       font-size: 1em;
       cursor: pointer;
       margin-left: 1em;
       transition: background 0.2s, color 0.2s;
+      box-shadow: 0 1px 4px #0001;
     }
     .export-btn:hover {
       background: var(--primary);
@@ -211,6 +271,7 @@
       flex-direction: column;
       min-width: 0;
       position: relative;
+      background: transparent;
     }
     .content-header {
       display: flex;
@@ -228,11 +289,12 @@
       background: #fff;
       color: var(--primary);
       border: 1px solid var(--primary);
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 0.4em 1em;
       font-size: 1em;
       cursor: pointer;
       transition: background 0.2s, color 0.2s;
+      box-shadow: 0 1px 4px #0001;
     }
     .add-link-btn:hover {
       background: var(--primary);
@@ -251,10 +313,16 @@
       background: var(--card-bg);
       border-radius: 6px;
       padding: 0.5em 1em;
-      box-shadow: 0 1px 4px var(--card-shadow);
+      box-shadow: 0 2px 12px var(--card-shadow);
+      border: 1.5px solid #ececec22;
+      transition: box-shadow 0.2s, background 0.2s;
     }
     .links-list li:last-child, .subfolders-list li:last-child {
       margin-bottom: 0;
+    }
+    .links-list li:hover, .subfolders-list li:hover {
+      box-shadow: 0 4px 24px var(--card-shadow), 0 0 0 2px var(--primary);
+      background: #fff8;
     }
     .edit-input {
       font-size: 1em;
@@ -382,7 +450,7 @@
       background: var(--sidebar-bg);
       color: var(--primary);
       border: 1px solid var(--primary);
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 0.3em 1.2em;
       font-size: 1em;
       cursor: pointer;
@@ -396,6 +464,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 1px 4px #0001;
     }
     .actionbar .action-btn:hover {
       background: var(--primary);
@@ -447,6 +516,47 @@
         padding: 1rem 0.5rem;
       }
     }
+    .sidebar, .content, .links-list li, .subfolders-list li, .folder-list li {
+      border-radius: 16px;
+    }
+    .add-folder-btn, .add-subfolder-btn, .action-btn, .theme-btn, .settings-btn, .export-btn {
+      border-radius: 12px;
+      box-shadow: 0 1px 4px #0001;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .add-folder-btn:hover, .add-subfolder-btn:hover, .action-btn:hover, .theme-btn:hover, .settings-btn:hover, .export-btn:hover {
+      filter: brightness(1.08) saturate(1.2);
+      box-shadow: 0 2px 8px var(--primary), 0 1px 4px #0001;
+    }
+    .folder-list li, .subfolders-list li {
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+    body.theme-glass .sidebar, body.theme-glass .links-list li, body.theme-glass .subfolders-list li {
+      background: var(--sidebar-bg);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid #fff4;
+    }
+    body, html {
+      background: var(--bg);
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    body, .sidebar, .content, .links-list li, .subfolders-list li, .folder-list li, .actionbar, .actionbar button, .actionbar .label {
+      text-shadow: 0 1px 2px #fff4, 0 0.5px 0.5px #0001;
+    }
+    .add-folder-btn, .add-subfolder-btn, .action-btn, .theme-btn, .settings-btn, .export-btn {
+      color: var(--primary);
+      background: #fff;
+      border: 1.5px solid var(--primary);
+    }
+    .add-folder-btn:hover, .add-subfolder-btn:hover, .action-btn:hover, .theme-btn:hover, .settings-btn:hover, .export-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .sidebar, .content, .links-list li, .subfolders-list li, .folder-list li {
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
@@ -454,10 +564,13 @@
     <nav class="sidebar">
       <h2 id="folderTitle" title="点击可一键展开/收起全部分组">分组/文件夹</h2>
       <button class="add-folder-btn" id="addFolderBtn">+ 新建分组</button>
-      <ul class="folder-list" id="folderList"></ul>
+      <label class="add-folder-btn" for="importFolderBookmarks" style="background:#fff;color:var(--primary);border:1px solid var(--primary);margin-top:0.5em;">导入成文件夹
+        <input type="file" id="importFolderBookmarks" accept=".html" style="display:none">
+      </label>
       <label class="add-folder-btn" for="importBookmarks" style="background:#fff;color:var(--primary);border:1px solid var(--primary);margin-top:0.5em;">导入收藏夹
         <input type="file" id="importBookmarks" accept=".html" style="display:none">
       </label>
+      <ul class="folder-list" id="folderList"></ul>
     </nav>
     <div class="resizer" id="resizer"></div>
     <main class="content">
@@ -486,8 +599,13 @@
     const themes = [
       {name: '亮色', value: ''},
       {name: '暗色', value: 'theme-dark'},
+      {name: '深蓝夜空', value: 'theme-darkblue'},
+      {name: '暗紫极夜', value: 'theme-darkpurple'},
       {name: '蓝色', value: 'theme-blue'},
-      {name: '绿色', value: 'theme-green'}
+      {name: '绿色', value: 'theme-green'},
+      {name: '淡紫', value: 'theme-purple'},
+      {name: '橙粉', value: 'theme-orange'},
+      {name: '玻璃', value: 'theme-glass'}
     ];
     function setTheme(theme) {
       document.body.className = theme;
@@ -822,7 +940,6 @@
         editBtn.onclick = function(e) {
           e.stopPropagation();
           requireAdmin(() => {
-            let editing = true;
             li.innerHTML = '';
             const inputTitle = document.createElement('input');
             inputTitle.type = 'text';
@@ -836,23 +953,33 @@
             inputUrl.style.width = '16em';
             li.appendChild(inputTitle);
             li.appendChild(inputUrl);
-            inputTitle.onkeydown = inputUrl.onkeydown = function(e) {
-              if (e.key === 'Enter') {
-                inputUrl.blur();
-                inputTitle.blur();
-              }
-            };
-            inputTitle.onblur = inputUrl.onblur = function() {
-              if (inputTitle.value.trim() && inputUrl.value.trim()) {
-                link.title = inputTitle.value.trim();
-                link.url = inputUrl.value.trim();
+            // 新增确定/取消按钮
+            const okBtn = document.createElement('button');
+            okBtn.textContent = '确定';
+            okBtn.className = 'action-btn';
+            okBtn.style.marginLeft = '0.5em';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '取消';
+            cancelBtn.className = 'action-btn';
+            cancelBtn.style.marginLeft = '0.5em';
+            li.appendChild(okBtn);
+            li.appendChild(cancelBtn);
+            okBtn.onclick = function() {
+              const newTitle = inputTitle.value.trim();
+              const newUrl = inputUrl.value.trim();
+              if (newTitle && newUrl) {
+                link.title = newTitle;
+                link.url = newUrl;
                 saveToLocal();
-                editing = false;
-                renderAll();
-              } else {
-                editing = false;
-                renderAll();
               }
+              renderAll();
+            };
+            cancelBtn.onclick = function() {
+              renderAll();
+            };
+            inputTitle.onkeydown = inputUrl.onkeydown = function(e) {
+              if (e.key === 'Enter') okBtn.click();
+              if (e.key === 'Escape') cancelBtn.click();
             };
             inputTitle.focus();
           });
@@ -884,7 +1011,7 @@
           e.stopPropagation();
           requireAdmin(() => {
             const allFolders = getAllFolderNodes();
-            // 不能移动到自己或子孙分组
+            // 只排除自己和子孙分组
             let invalidIds = [];
             function collectDescendants(node) {
               if (node.children) {
@@ -894,7 +1021,7 @@
                 });
               }
             }
-            collectDescendants(folder);
+            collectDescendants(link); // 只排除自己（链接本身不会有children）
             let options = allFolders.filter(f => !invalidIds.includes(f.id)).map(f => `<option value="${f.id}">${f.path.join(' / ')}</option>`).join('');
             let sel = document.createElement('select');
             sel.innerHTML = `<option value="">请选择目标分组</option>` + options;
@@ -1163,8 +1290,7 @@
                 editBtn.onclick = function(e) {
                   e.stopPropagation();
                   requireAdmin(() => {
-                    let editing = true;
-                    linkLi.innerHTML = '';
+                    li.innerHTML = '';
                     const inputTitle = document.createElement('input');
                     inputTitle.type = 'text';
                     inputTitle.value = link.title;
@@ -1175,25 +1301,35 @@
                     inputUrl.value = link.url;
                     inputUrl.className = 'edit-input';
                     inputUrl.style.width = '16em';
-                    linkLi.appendChild(inputTitle);
-                    linkLi.appendChild(inputUrl);
-                    inputTitle.onkeydown = inputUrl.onkeydown = function(e) {
-                      if (e.key === 'Enter') {
-                        inputUrl.blur();
-                        inputTitle.blur();
-                      }
-                    };
-                    inputTitle.onblur = inputUrl.onblur = function() {
-                      if (inputTitle.value.trim() && inputUrl.value.trim()) {
-                        link.title = inputTitle.value.trim();
-                        link.url = inputUrl.value.trim();
+                    li.appendChild(inputTitle);
+                    li.appendChild(inputUrl);
+                    // 新增确定/取消按钮
+                    const okBtn = document.createElement('button');
+                    okBtn.textContent = '确定';
+                    okBtn.className = 'action-btn';
+                    okBtn.style.marginLeft = '0.5em';
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.textContent = '取消';
+                    cancelBtn.className = 'action-btn';
+                    cancelBtn.style.marginLeft = '0.5em';
+                    li.appendChild(okBtn);
+                    li.appendChild(cancelBtn);
+                    okBtn.onclick = function() {
+                      const newTitle = inputTitle.value.trim();
+                      const newUrl = inputUrl.value.trim();
+                      if (newTitle && newUrl) {
+                        link.title = newTitle;
+                        link.url = newUrl;
                         saveToLocal();
-                        editing = false;
-                        renderAll();
-                      } else {
-                        editing = false;
-                        renderAll();
                       }
+                      renderAll();
+                    };
+                    cancelBtn.onclick = function() {
+                      renderAll();
+                    };
+                    inputTitle.onkeydown = inputUrl.onkeydown = function(e) {
+                      if (e.key === 'Enter') okBtn.click();
+                      if (e.key === 'Escape') cancelBtn.click();
                     };
                     inputTitle.focus();
                   });
@@ -1345,6 +1481,33 @@
         }
       });
     };
+
+    // ===== 书签导入成文件夹 =====
+    document.getElementById('importFolderBookmarks').addEventListener('change', function(e) {
+      requireAdmin(() => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const html = evt.target.result;
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          let dl = doc.querySelector('dl');
+          if (!dl) {
+            alert('未找到有效的收藏夹内容');
+            return;
+          }
+          let folderName = prompt('请输入导入文件夹名称：');
+          if (!folderName || !folderName.trim()) return;
+          let imported = parseBookmarks(dl);
+          ensureIds(imported);
+          bookmarks.push({ title: folderName.trim(), children: imported, id: generateId() });
+          saveToLocal();
+          renderAll();
+        };
+        reader.readAsText(file, 'utf-8');
+      });
+    });
 
     // ===== 书签导入 =====
     document.getElementById('importBookmarks').addEventListener('change', function(e) {
