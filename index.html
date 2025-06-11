@@ -683,6 +683,34 @@
     </main>
   </div>
   <script>
+    // ===== 云端API配置 =====
+    const API_URL = 'https://bookmarkapi.jjyydd.workers.dev.workers.dev/api/bookmarks'; // 填你的API地址
+    const API_PWD = ''; // 如有密码，填密码，否则留空
+
+    // ===== 云端同步函数 =====
+    async function loadFromCloud() {
+      try {
+        let url = API_URL;
+        if (API_PWD) url += '?pwd=' + encodeURIComponent(API_PWD);
+        const res = await fetch(url);
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+      return null;
+    }
+    async function saveToCloud() {
+      try {
+        let url = API_URL;
+        if (API_PWD) url += '?pwd=' + encodeURIComponent(API_PWD);
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookmarks)
+        });
+      } catch (e) {}
+    }
+
     // ===== 主题切换 =====
     const themes = [
       {name: '亮色', value: ''},
@@ -814,14 +842,6 @@
     let bookmarks = [];
     let selectedFolderPath = [];
 
-    function saveToLocal() {
-      localStorage.setItem('myBookmarks', JSON.stringify(bookmarks));
-    }
-    function loadFromLocal() {
-      const data = localStorage.getItem('myBookmarks');
-      return data ? JSON.parse(data) : null;
-    }
-
     // ===== 书签操作工具 =====
     function getFolderByPath(path, arr = bookmarks) {
       if (!path.length) return null;
@@ -903,7 +923,7 @@
               input.onblur = function() {
                 if (input.value.trim() && input.value !== folder.title) {
                   folder.title = input.value.trim();
-                  saveToLocal();
+                  saveToCloud();
                   renderAll();
                 } else {
                   renderAll();
@@ -928,7 +948,7 @@
               input.onblur = function() {
                 if (input.value.trim() && input.value !== folder.title) {
                   folder.title = input.value.trim();
-                  saveToLocal();
+                  saveToCloud();
                   renderAll();
                 } else {
                   renderAll();
@@ -963,7 +983,7 @@
                 const idx = parent.findIndex(f => f.title === folder.title && f.children);
                 if (idx > -1) parent.splice(idx, 1);
                 if (selectedFolderPath.join('/') === pathKey) selectedFolderPath = [];
-                saveToLocal();
+                saveToCloud();
                 renderAll();
               }
             });
@@ -1058,7 +1078,7 @@
               if (newTitle && newUrl) {
                 link.title = newTitle;
                 link.url = newUrl;
-                saveToLocal();
+                saveToCloud();
               }
               renderAll();
             };
@@ -1084,7 +1104,7 @@
             if (confirm('确定要删除该网址吗？')) {
               const idx = folder.children.findIndex(f => f === link);
               if (idx > -1) folder.children.splice(idx, 1);
-              saveToLocal();
+              saveToCloud();
               renderAll();
             }
           });
@@ -1142,7 +1162,7 @@
               const removed = removeNodeById(link.id);
               // 2. 插入到目标分组
               insertNodeById(val, removed);
-              saveToLocal();
+              saveToCloud();
               renderAll();
               document.body.removeChild(dialog);
             };
@@ -1198,7 +1218,7 @@
               input.onblur = function() {
                 if (input.value.trim() && input.value !== sub.title) {
                   sub.title = input.value.trim();
-                  saveToLocal();
+                  saveToCloud();
                   renderAll();
                 } else {
                   renderAll();
@@ -1223,7 +1243,7 @@
               input.onblur = function() {
                 if (input.value.trim() && input.value !== sub.title) {
                   sub.title = input.value.trim();
-                  saveToLocal();
+                  saveToCloud();
                   renderAll();
                 } else {
                   renderAll();
@@ -1252,7 +1272,7 @@
               const name = prompt('请输入新子分组名称：');
               if (name && name.trim()) {
                 sub.children.push({ title: name.trim(), children: [], id: generateId() });
-                saveToLocal();
+                saveToCloud();
                 renderAll();
               }
             });
@@ -1269,7 +1289,7 @@
               if (confirm('确定要删除该子分组及其所有内容吗？')) {
                 const idx = folder.children.findIndex(f => f.title === sub.title && f.children);
                 if (idx > -1) folder.children.splice(idx, 1);
-                saveToLocal();
+                saveToCloud();
                 renderAll();
               }
             });
@@ -1326,7 +1346,7 @@
                 const removed = removeNodeById(sub.id);
                 // 2. 插入到目标分组
                 insertNodeById(val, removed);
-                saveToLocal();
+                saveToCloud();
                 renderAll();
                 document.body.removeChild(dialog);
               };
@@ -1408,7 +1428,7 @@
                       if (newTitle && newUrl) {
                         link.title = newTitle;
                         link.url = newUrl;
-                        saveToLocal();
+                        saveToCloud();
                       }
                       renderAll();
                     };
@@ -1434,7 +1454,7 @@
                     if (confirm('确定要删除该网址吗？')) {
                       const idx = sub.children.findIndex(f => f === link);
                       if (idx > -1) sub.children.splice(idx, 1);
-                      saveToLocal();
+                      saveToCloud();
                       renderAll();
                     }
                   });
@@ -1534,7 +1554,7 @@
         const name = prompt('请输入新分组名称：');
         if (name && name.trim()) {
           bookmarks.push({ title: name.trim(), children: [], id: generateId() });
-          saveToLocal();
+          saveToCloud();
           renderAll();
         }
       });
@@ -1548,7 +1568,7 @@
         const url = prompt('请输入网址链接（含 http/https）：');
         if (!url || !url.trim()) return;
         folder.children.push({ title: title.trim(), url: url.trim(), id: generateId() });
-        saveToLocal();
+        saveToCloud();
         renderAll();
       });
     };
@@ -1564,7 +1584,7 @@
         const name = prompt('请输入新子分组名称：');
         if (name && name.trim()) {
           folder.children.push({ title: name.trim(), children: [], id: generateId() });
-          saveToLocal();
+          saveToCloud();
           renderAll();
         }
       });
@@ -1590,7 +1610,7 @@
           let imported = parseBookmarks(dl);
           ensureIds(imported);
           bookmarks.push({ title: folderName.trim(), children: imported, id: generateId() });
-          saveToLocal();
+          saveToCloud();
           renderAll();
         };
         reader.readAsText(file, 'utf-8');
@@ -1615,7 +1635,7 @@
           bookmarks = parseBookmarks(dl);
           ensureIds(bookmarks); // 补全ID
           selectedFolderPath = [];
-          saveToLocal();
+          saveToCloud();
           renderAll();
         };
         reader.readAsText(file, 'utf-8');
@@ -1691,7 +1711,7 @@
         if (confirm('确定要清空所有分组和网址吗？')) {
           bookmarks = [];
           selectedFolderPath = [];
-          localStorage.removeItem('myBookmarks');
+          saveToCloud();
           renderAll();
         }
       });
@@ -1760,8 +1780,8 @@
     if (savedW && !isNaN(savedW)) setSidebarWidth(savedW);
 
     // ===== 页面初始化 =====
-    window.addEventListener('DOMContentLoaded', function() {
-      const saved = loadFromLocal();
+    window.addEventListener('DOMContentLoaded', async function() {
+      const saved = await loadFromCloud();
       if (saved) bookmarks = saved;
       ensureIds(bookmarks); // 补全ID
       renderAll();
