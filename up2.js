@@ -272,14 +272,13 @@ async function B测试2() {
 	app.toast("已连接服务器的B测试！");
 	log("按下B测试，已连接up2.js！");
 };
-
 async function 侧键测试2() {
 	floatw.addlog("已连接服务器的侧键测试！");
 	//log(JSON.parse(JSON.stringify(android.device)).imei.model)
 	//log(await 节点识别("text", "已挖數據", "已挖數據"))
 	tz = 0;
 	model = JSON.parse(JSON.stringify(android.device)).imei.model
-	if (model == "Nubia Z17" || model == "23127PN0CC") {
+	if (model == "NX563J" || model == "23127PN0CC") {
 		log("Nubia Z17或者23127PN0CC：" + JSON.parse(JSON.stringify(android.device)).imei.model)
 		if (await 节点识别("text", "未学章节", "未学章节") > 0 || await 节点识别("text", "已学章节", "已学章节") > 0) {
 			logs(model + "开始继续教育！");
@@ -308,14 +307,17 @@ async function 侧键测试2() {
 
 		if (await 节点识别("text", "DepinSim", "xpath", "5", "DepinSim文字") > 0) {
 			for (var h = 1; h < 4; i++) {
+				logs("进入DepinSim循环！");
 				for (var i = 1; i < 2800; i++) {
 					if (JSON.parse(JSON.stringify(android.device)).imei.model == "LIO-AN00") {
 						gesture.click(X(106, 1625), X(918, 2068));
 						//log("LIO-AN00")
 					};
-					if (JSON.parse(JSON.stringify(android.device)).imei.model == "Nubia Z17") {
-						gesture.click(X(121, 730), X(1097, 1391));
-						//log("Nubia Z17")
+					if (JSON.parse(JSON.stringify(android.device)).imei.model == "NX563J") {
+						logs("NX563J");
+						gesture.click(await X(121, 730), await X(1097, 1391));
+						//gesture.click(300, 1391)
+						//logs(await X(121, 730));
 					};
 					if (i % 200 === 0) {
 
@@ -323,7 +325,7 @@ async function 侧键测试2() {
 								.device))
 							.screen.height);
 					}
-					await sleep(80);
+					await sleep(200);
 				};
 				await sleep(2000);
 				if (await 节点EX("text", "Boost (3/3)", "加速3") || await 节点EX("text", "Boost (2/3)", "加速2") ||
@@ -332,7 +334,7 @@ async function 侧键测试2() {
 					await sleep(3000);
 				}
 			}
-
+           logs("DepinSim运行结束！");
 		}
 	}
 	if (JSON.parse(JSON.stringify(android.device)).imei.model == "23127PN0CC") {
