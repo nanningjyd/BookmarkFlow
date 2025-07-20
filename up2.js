@@ -273,7 +273,7 @@ async function B测试2() {
 	log("按下B测试，已连接up2.js！");
 };
 async function 侧键测试2() {
-	floatw.addlog("已连接服务器的侧键测试！");
+	logs("已连接服务器的侧键测试！");
 	//log(JSON.parse(JSON.stringify(android.device)).imei.model)
 	//log(await 节点识别("text", "已挖數據", "已挖數據"))
 	tz = 0;
