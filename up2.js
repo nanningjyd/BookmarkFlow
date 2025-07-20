@@ -279,7 +279,7 @@ async function 侧键测试2() {
 	tz = 0;
 	model = JSON.parse(JSON.stringify(android.device)).imei.model
 	if (model == "NX563J" || model == "23127PN0CC") {
-		log("Nubia Z17或者23127PN0CC：" + JSON.parse(JSON.stringify(android.device)).imei.model)
+		//log("Nubia Z17或者23127PN0CC：" + JSON.parse(JSON.stringify(android.device)).imei.model)
 		if (await 节点识别("text", "未学章节", "未学章节") > 0 || await 节点识别("text", "已学章节", "已学章节") > 0) {
 			logs(model + "开始继续教育！");
 			for (var i = 1; i < 10000; i++) {
