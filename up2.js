@@ -320,7 +320,14 @@ async function 侧键测试2() {
 						//logs(await X(121, 730));
 					};
 					if (i % 200 === 0) {
-						await 节点文字("index", "1", "xpath", "17", "bro", "22", "visible", "true", "显示点数");
+						//log(await 节点文字("resid", "hv8gdo9bScULrD02E", "显示点数"));
+						//log(await 节点文字("resid", "hv8gdo9bScULrD027", "显示次数"));
+						//("index", "4", "xpath", "17", "text", "Boost (0/3)", "显示次数为0")
+						if (await 节点识别("index", "4", "xpath", "17", "text", "Boost (0/3)", "显示次数为0") > 0 &&
+							await 节点识别("index", "1", "xpath", "17", "text", "0", "显示点数为0") > 0) {
+							logs("次数和点数都是0跳出循环！");
+							return;
+						}
 						floatw.addlog("DepinSim剩余" + (2800 - i) + "次！height为" + JSON.parse(JSON.stringify(android
 								.device))
 							.screen.height);
