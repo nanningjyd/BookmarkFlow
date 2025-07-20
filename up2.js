@@ -314,7 +314,7 @@ async function 侧键测试2() {
 						//log("LIO-AN00")
 					};
 					if (JSON.parse(JSON.stringify(android.device)).imei.model == "NX563J") {
-						logs("NX563J");
+						//logs("NX563J");
 						gesture.click(await X(121, 730), await X(1097, 1391));
 						//gesture.click(300, 1391)
 						//logs(await X(121, 730));
