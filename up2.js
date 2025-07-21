@@ -775,4 +775,3 @@ async function 找图点击右下(aa, bb) {
 	};
 
 };
-/**
