@@ -348,7 +348,7 @@ async function 侧键测试2() {
 	if (JSON.parse(JSON.stringify(android.device)).imei.model == "23127PN0CC") {
 		log("23127PN0CC" + JSON.parse(JSON.stringify(android.device)).imei.model)
 		//log(await 节点识别("index", "0", "xpath", "11", "bro", "1", "关闭6"))
-		if (await 节点识别("text", "Watch videos over the day", "开始看") > 0) {
+		if (await 节点识别("text", "Watch Video", "开始看") > 0) {
 			logs("自动点击numero了！")
 			for (var i = 1; i < 6000; i++) {
 				await 节点GT("text", "继续", "继续")
