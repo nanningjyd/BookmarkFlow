@@ -351,6 +351,7 @@ async function 侧键测试2() {
 		if (await 节点识别("text", "Watch Video", "开始看") > 0) {
 			logs("自动点击numero了！")
 			for (var i = 1; i < 6000; i++) {
+				logs("开始循环点击numero了！")
 				await 节点GT("text", "继续", "继续")
 				await 节点EX("text", "Watch Video", "开始看")
 				await 节点EX("text", "Try Again", "重试")
