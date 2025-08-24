@@ -353,7 +353,7 @@ async function 侧键测试2() {
 			for (var i = 1; i < 6000; i++) {
 				await 节点GT("text", "继续", "继续")
 				await 节点EX("text", "Watch Video", "开始看")
-				await 节点EX("text", "Try again", "重试")
+				await 节点EX("text", "Try Again", "重试")
 				//await 节点GT("index", "0", "xpath", "13", "bro", "2", "visible", "true", "关闭")
 				//await 节点GT("index", "0", "xpath", "13", "bro", "5", "关闭2")
 				await 节点EX("index", "1", "xpath", "8", "bro", "2", "id", "btn-skip", "关闭3")
