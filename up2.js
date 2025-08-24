@@ -352,7 +352,7 @@ async function 侧键测试2() {
 			logs("自动点击numero了！")
 			for (var i = 1; i < 6000; i++) {
 				await 节点GT("text", "继续", "继续")
-				await 节点EX("text", "Watch videos over the day", "开始看")
+				await 节点EX("text", "Watch Video", "开始看")
 				await 节点EX("text", "Try again", "重试")
 				//await 节点GT("index", "0", "xpath", "13", "bro", "2", "visible", "true", "关闭")
 				//await 节点GT("index", "0", "xpath", "13", "bro", "5", "关闭2")
