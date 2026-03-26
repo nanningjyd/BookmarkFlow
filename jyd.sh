@@ -56,6 +56,471 @@ break_end() {
       clear
 }
 
+#=======================================
+# OpenClaw 管理菜单
+#=======================================
+moltbot_menu() {
+	local app_id="114"
+	
+	check_openclaw_update() {
+		if ! command -v npm >/dev/null 2>&1; then
+			return 1
+		fi
+		local_version=$(npm list -g openclaw --depth=0 --no-update-notifier 2>/dev/null | grep openclaw | awk '{print $NF}' | sed 's/^.*@//')
+		if [ -z "$local_version" ]; then
+			return 1
+		fi
+		remote_version=$(npm view openclaw version --no-update-notifier 2>/dev/null)
+		if [ -z "$remote_version" ]; then
+			return 1
+		fi
+		if [ "$local_version" != "$remote_version" ]; then
+			echo "检测到新版本:$remote_version"
+		else
+			echo "当前版本已是最新:$local_version"
+		fi
+	}
+
+	get_install_status() {
+		if command -v openclaw >/dev/null 2>&1; then
+			echo "已安装"
+		else
+			echo "未安装"
+		fi
+	}
+
+	get_running_status() {
+		if pgrep -f "openclaw-gatewa" >/dev/null 2>&1; then
+			echo "运行中"
+		else
+			echo "未运行"
+		fi
+	}
+
+	show_menu() {
+		clear
+		local install_status=$(get_install_status)
+		local running_status=$(get_running_status)
+		local update_message=$(check_openclaw_update)
+		echo "======================================="
+		echo "🦞 OPENCLAW 管理工具"
+		echo "======================================="
+		echo "$install_status $running_status $update_message"
+		echo "======================================="
+		echo "1.  安装"
+		echo "2.  启动"
+		echo "3.  停止"
+		echo "--------------------"
+		echo "4.  状态日志查看"
+		echo "5.  换模型"
+		echo "6.  API管理"
+		echo "7.  机器人连接对接"
+		echo "8.  插件管理（安装/删除）"
+		echo "9.  技能管理（安装/删除）"
+		echo "10. 编辑主配置文件"
+		echo "11. 配置向导"
+		echo "12. 健康检测与修复"
+		echo "13. WebUI访问与设置"
+		echo "14. TUI命令行对话窗口"
+		echo "15. 记忆/Memory"
+		echo "16. 权限管理"
+		echo "17. 多智能体管理"
+		echo "--------------------"
+		echo "18. 备份与还原"
+		echo "19. 更新"
+		echo "20. 卸载"
+		echo "--------------------"
+		echo "0. 返回上一级选单"
+		echo "--------------------"
+		printf "请输入选项并回车: "
+	}
+
+	start_gateway() {
+		openclaw gateway stop
+		openclaw gateway start
+		sleep 3
+	}
+
+	install_node_and_tools() {
+		if command -v dnf &>/dev/null; then
+			curl -fsSL https://rpm.nodesource.com/setup_24.x | sudo bash -
+			dnf update -y
+			dnf group install -y "Development Tools" "Development Libraries"
+			dnf install -y cmake libatomic nodejs
+		fi
+		if command -v apt &>/dev/null; then
+			curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+			apt update -y
+			apt install build-essential python3 libatomic1 nodejs -y
+		fi
+	}
+
+	configure_openclaw_session_policy() {
+		local config_file="${HOME}/.openclaw/openclaw.json"
+		[ ! -f "$config_file" ] && return 1
+		python3 - "$config_file" <<'PY'
+import json, sys
+path = sys.argv[1]
+with open(path, 'r', encoding='utf-8') as f:
+    obj = json.load(f)
+session = obj.setdefault('session', {})
+session['dmScope'] = session.get('dmScope', 'per-channel-peer')
+session['resetTriggers'] = ['/new', '/reset']
+session['reset'] = {'mode': 'idle', 'idleMinutes': 10080}
+session['resetByType'] = {
+    'direct': {'mode': 'idle', 'idleMinutes': 10080},
+    'thread': {'mode': 'idle', 'idleMinutes': 1440},
+    'group': {'mode': 'idle', 'idleMinutes': 120}
+}
+with open(path, 'w', encoding='utf-8') as f:
+    json.dump(obj, f, ensure_ascii=False, indent=2)
+    f.write('\n')
+PY
+	}
+
+	sync_openclaw_api_models() {
+		local config_file="${HOME}/.openclaw/openclaw.json"
+		[ ! -f "$config_file" ] && return 0
+		install jq curl >/dev/null 2>&1
+		echo "OpenClaw API 模型同步功能..."
+		return 0
+	}
+
+	install_moltbot() {
+		echo "开始安装 OpenClaw..."
+		install_node_and_tools
+		npm install -g openclaw@latest
+		openclaw onboard --install-daemon
+		openclaw config set tools.profile full
+		openclaw config set tools.elevated.enabled true
+		configure_openclaw_session_policy
+		start_gateway
+		break_end
+	}
+
+	start_bot() {
+		echo "启动 OpenClaw..."
+		start_gateway
+		break_end
+	}
+
+	stop_bot() {
+		echo "停止 OpenClaw..."
+		tmux kill-session -t gateway > /dev/null 2>&1
+		openclaw gateway stop
+		break_end
+	}
+
+	view_logs() {
+		echo "查看 OpenClaw 状态日志"
+		openclaw status
+		openclaw gateway status
+		openclaw logs
+		break_end
+	}
+
+	change_model() {
+		echo "=== 换模型 ==="
+		openclaw models list
+		echo ""
+		read -p "请输入模型名称 (如: qwen-portal/coder-model): " model_name
+		if [ -n "$model_name" ]; then
+			openclaw models set "$model_name"
+			start_gateway
+			echo "模型已切换为: $model_name"
+		fi
+		break_end
+	}
+
+	openclaw_api_manage_menu() {
+		while true; do
+			clear
+			echo "======================================="
+			echo "OpenClaw API 管理"
+			echo "======================================="
+			echo "1. 添加API"
+			echo "2. 查看API列表"
+			echo "3. 删除API"
+			echo "0. 退出"
+			echo "---------------------------------------"
+			read -erp "请输入你的选择: " api_choice
+			case "$api_choice" in
+				1)
+					echo "=== 交互式添加 API ==="
+					read -erp "请输入 Provider 名称 (如: deepseek): " provider_name
+					read -erp "请输入 Base URL (如: https://api.xxx.com/v1): " base_url
+					read -rsp "请输入 API Key: " api_key
+					echo
+					if [ -n "$provider_name" ] && [ -n "$base_url" ] && [ -n "$api_key" ]; then
+						install jq
+						base_url="${base_url%/}"
+						jq --arg prov "$provider_name" --arg url "$base_url" --arg key "$api_key" '
+						.models |= (. // { mode: "merge", providers: {} })
+						| .mode = "merge"
+						| .providers[$prov] = {baseUrl: $url, apiKey: $key, api: "openai-completions", models: []}
+						' "${HOME}/.openclaw/openclaw.json" > "${HOME}/.openclaw/openclaw.json.tmp" && mv "${HOME}/.openclaw/openclaw.json.tmp" "${HOME}/.openclaw/openclaw.json"
+						echo "✅ API 添加成功"
+						start_gateway
+					fi
+					;;
+				2)
+					echo "=== 已配置 API 列表 ==="
+					jq -r '.models.providers // {} | keys[]' "${HOME}/.openclaw/openclaw.json" 2>/dev/null || echo "未找到配置"
+					read -p "按回车继续..."
+					;;
+				3)
+					echo "=== 删除 API ==="
+					read -erp "请输入要删除的 API 名称: " del_provider
+					if [ -n "$del_provider" ]; then
+						jq --arg prov "$del_provider" 'del(.models.providers[$prov])' "${HOME}/.openclaw/openclaw.json" > "${HOME}/.openclaw/openclaw.json.tmp" && mv "${HOME}/.openclaw/openclaw.json.tmp" "${HOME}/.openclaw/openclaw.json"
+						echo "✅ API 已删除"
+						start_gateway
+					fi
+					;;
+				0)
+					return 0
+					;;
+			esac
+		done
+	}
+
+	change_tg_bot_code() {
+		echo "=== 机器人连接对接 ==="
+		echo "请在 Telegram 中搜索 @BotFather 创建机器人"
+		read -p "请输入 Bot Token: " bot_token
+		if [ -n "$bot_token" ]; then
+			openclaw config set channels.telegram.botToken "$bot_token"
+			openclaw config set channels.telegram.enabled true
+			echo "✅ Telegram 配置已保存"
+		fi
+		break_end
+	}
+
+	install_plugin() {
+		while true; do
+			clear
+			echo "======================================="
+			echo "OpenClaw 插件管理"
+			echo "======================================="
+			echo "1. 查看已安装插件"
+			echo "2. 安装插件"
+			echo "3. 删除插件"
+			echo "0. 退出"
+			echo "---------------------------------------"
+			read -erp "请输入你的选择: " plugin_choice
+			case "$plugin_choice" in
+				1)
+					openclaw plugins list
+					read -p "按回车继续..."
+					;;
+				2)
+					read -erp "请输入插件名称: " plugin_name
+					if [ -n "$plugin_name" ]; then
+						openclaw plugins install "$plugin_name"
+					fi
+					;;
+				3)
+					read -erp "请输入要删除的插件名称: " plugin_name
+					if [ -n "$plugin_name" ]; then
+						openclaw plugins remove "$plugin_name"
+					fi
+					;;
+				0)
+					return 0
+					;;
+			esac
+		done
+	}
+
+	install_skill() {
+		while true; do
+			clear
+			echo "======================================="
+			echo "OpenClaw 技能管理"
+			echo "======================================="
+			echo "1. 查看已安装技能"
+			echo "2. 安装技能"
+			echo "3. 删除技能"
+			echo "0. 退出"
+			echo "---------------------------------------"
+			read -erp "请输入你的选择: " skill_choice
+			case "$skill_choice" in
+				1)
+					openclaw skills list
+					read -p "按回车继续..."
+					;;
+				2)
+					read -erp "请输入技能名称: " skill_name
+					if [ -n "$skill_name" ]; then
+						openclaw skills install "$skill_name"
+					fi
+					;;
+				3)
+					read -erp "请输入要删除的技能名称: " skill_name
+					if [ -n "$skill_name" ]; then
+						openclaw skills remove "$skill_name"
+					fi
+					;;
+				0)
+					return 0
+					;;
+			esac
+		done
+	}
+
+	nano_openclaw_json() {
+		install nano
+		nano ~/.openclaw/openclaw.json
+		start_gateway
+	}
+
+	openclaw_webui_menu() {
+		while true; do
+			clear
+			echo "======================================="
+			echo "OpenClaw WebUI 访问与设置"
+			echo "======================================="
+			echo "1. 查看访问地址"
+			echo "2. 获取访问 Token"
+			echo "0. 退出"
+			echo "---------------------------------------"
+			read -erp "请选择: " choice
+			case "$choice" in
+				1)
+					openclaw dashboard
+					read -p "按回车继续..."
+					;;
+				2)
+					openclaw dashboard
+					read -p "按回车继续..."
+					;;
+				0)
+					return 0
+					;;
+			esac
+		done
+	}
+
+	openclaw_backup_restore_menu() {
+		while true; do
+			clear
+			echo "======================================="
+			echo "OpenClaw 备份与还原"
+			echo "======================================="
+			echo "1. 备份配置"
+			echo "2. 还原配置"
+			echo "0. 退出"
+			echo "---------------------------------------"
+			read -erp "请选择: " choice
+			case "$choice" in
+				1)
+					mkdir -p /root/openclaw_backup
+					cp -r ~/.openclaw /root/openclaw_backup/backup_$(date +%Y%m%d_%H%M%S)
+					echo "✅ 备份完成"
+					read -p "按回车继续..."
+					;;
+				2)
+					echo "可用备份:"
+					ls -1 /root/openclaw_backup/ 2>/dev/null || echo "无备份"
+					read -erp "请输入备份文件夹名称: " backup_name
+					if [ -n "$backup_name" ] && [ -d "/root/openclaw_backup/$backup_name" ]; then
+						cp -r /root/openclaw_backup/$backup_name/.openclaw ~/
+						echo "✅ 还原完成，请重启 Gateway"
+						start_gateway
+					fi
+					read -p "按回车继续..."
+					;;
+				0)
+					return 0
+					;;
+			esac
+		done
+	}
+
+	openclaw_memory_menu() {
+		clear
+		echo "=== 记忆/Memory ==="
+		echo "1. 查看记忆"
+		echo "2. 清除记忆"
+		echo "0. 返回"
+		read -p "请选择: " choice
+		case "$choice" in
+			1)
+				ls -la ~/.openclaw/agents/main/agent/memories/ 2>/dev/null || echo "无记忆文件"
+				read -p "按回车继续..."
+				;;
+			2)
+				rm -rf ~/.openclaw/agents/main/agent/memories/*
+				echo "✅ 记忆已清除"
+				read -p "按回车继续..."
+				;;
+		esac
+	}
+
+	openclaw_permission_menu() {
+		clear
+		echo "=== 权限管理 ==="
+		openclaw config get session
+		read -p "按回车继续..."
+	}
+
+	openclaw_multiagent_menu() {
+		clear
+		echo "=== 多智能体管理 ==="
+		ls -la ~/.openclaw/agents/ 2>/dev/null || echo "暂无多智能体"
+		read -p "按回车继续..."
+	}
+
+	update_moltbot() {
+		echo "更新 OpenClaw..."
+		install_node_and_tools
+		npm install -g openclaw@latest
+		start_gateway
+		echo "更新完成"
+		break_end
+	}
+
+	uninstall_moltbot() {
+		echo "卸载 OpenClaw..."
+		read -p "确定要卸载吗？(y/N): " confirm
+		if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+			openclaw uninstall
+			npm uninstall -g openclaw
+			rm -rf ~/.openclaw
+			echo "卸载完成"
+		fi
+		break_end
+	}
+
+	while true; do
+		show_menu
+		read choice
+		case $choice in
+			1) install_moltbot ;;
+			2) start_bot ;;
+			3) stop_bot ;;
+			4) view_logs ;;
+			5) change_model ;;
+			6) openclaw_api_manage_menu ;;
+			7) change_tg_bot_code ;;
+			8) install_plugin ;;
+			9) install_skill ;;
+			10) nano_openclaw_json ;;
+			11) openclaw onboard --install-daemon; break_end ;;
+			12) openclaw doctor --fix; sync_openclaw_api_models; start_gateway; break_end ;;
+			13) openclaw_webui_menu ;;
+			14) openclaw tui; break_end ;;
+			15) openclaw_memory_menu ;;
+			16) openclaw_permission_menu ;;
+			17) openclaw_multiagent_menu ;;
+			18) openclaw_backup_restore_menu ;;
+			19) update_moltbot ;;
+			20) uninstall_moltbot ;;
+			*) break ;;
+		esac
+	done
+}
+
 check_port() {
     # 定义要检测的端口
     PORT=443
@@ -374,7 +839,7 @@ clear
 echo -e "\033[33m202311215-jyd一键脚本工具 v1.0\033[0m"
 echo "------------------------"
 echo "1. kejilion的综合脚本"
-echo "2. 看下容器运行情况--包括tm"
+echo "2. OpenClaw相关命令"
 echo "3. 八合一一键脚本"
 echo "4. kejilion的综合脚本(国际无乱码版)"
 echo "5. serv00 上的一些应用"
@@ -403,7 +868,7 @@ case $choice in
     ;;
   2)
     clear
-    docker ps -a
+    moltbot_menu
     ;;
   3)
     clear
