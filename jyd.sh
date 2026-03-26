@@ -839,7 +839,7 @@ clear
 echo -e "\033[33m202311215-jyd一键脚本工具 v1.0\033[0m"
 echo "------------------------"
 echo "1. kejilion的综合脚本"
-echo "2. OpenClaw相关命令"
+echo "2. OpenClaw相关工具"
 echo "3. 八合一一键脚本"
 echo "4. kejilion的综合脚本(国际无乱码版)"
 echo "5. serv00 上的一些应用"
